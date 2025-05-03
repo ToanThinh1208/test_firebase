@@ -22,12 +22,13 @@ const quizzes: Quiz[] = [
   { id: 'q4', title: 'Common Phrasal Verbs', description: 'Match the phrasal verbs to their meanings.', topic: 'Vocabulary', difficulty: 'Medium', questionCount: 12, imageUrl: 'https://picsum.photos/400/225?random=10', imageHint: 'puzzle pieces connection' },
 ];
 
-function getDifficultyColor(difficulty: Quiz['difficulty']) {
+// Function to get Tailwind classes for difficulty
+function getDifficultyClasses(difficulty: Quiz['difficulty']) {
     switch (difficulty) {
-        case 'Easy': return 'text-green-600';
-        case 'Medium': return 'text-yellow-600';
-        case 'Hard': return 'text-red-600';
-        default: return 'text-muted-foreground';
+        case 'Easy': return 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900';
+        case 'Medium': return 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900';
+        case 'Hard': return 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900';
+        default: return 'text-muted-foreground bg-muted';
     }
 }
 
@@ -49,16 +50,18 @@ export default function QuizzesPage() {
                   <Image
                     src={quiz.imageUrl}
                     alt={quiz.title}
-                    layout="fill"
-                    objectFit="cover"
+                    fill // Use fill instead of layout="fill"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Add sizes prop
+                    style={{ objectFit: 'cover' }} // Use style object for objectFit
                     data-ai-hint={quiz.imageHint}
                   />
               </div>
               <CardHeader>
-                <div className="flex justify-between items-center mb-2 text-sm text-muted-foreground">
-                   <span className="font-medium">{quiz.topic}</span>
-                   <span className={`font-semibold ${getDifficultyColor(quiz.difficulty)} flex items-center gap-1`}>
-                       <Star className={`h-4 w-4 ${getDifficultyColor(quiz.difficulty)} fill-current`} /> {/* Use Star for difficulty */}
+                <div className="flex justify-between items-center mb-2 text-sm ">
+                   <span className="font-medium text-muted-foreground">{quiz.topic}</span>
+                   {/* Updated Difficulty Badge */}
+                   <span className={`font-semibold px-2 py-0.5 rounded-full text-xs flex items-center gap-1 ${getDifficultyClasses(quiz.difficulty)}`}>
+                       <Star className={`h-3 w-3 fill-current`} /> {/* Adjusted icon size */}
                        {quiz.difficulty}
                    </span>
                 </div>

@@ -1,20 +1,19 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { pronunciationFeedback, PronunciationFeedbackInput, PronunciationFeedbackOutput } from '@/ai/flows/pronunciation-feedback';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Mic, Square, Loader2, AlertCircle, CheckCircle, Volume2 } from 'lucide-react';
+import { Mic, Square, Loader2, AlertCircle, Volume2 } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 
-type RecordingState = 'idle' | 'recording' | 'processing' | 'finished' | 'error';
+type RecordingState = 'idle' | 'recording' | 'processing' | 'stopped' | 'error';
 
 export default function PronunciationPage() {
   const [text, setText] = useState<string>('The quick brown fox jumps over the lazy dog.');
-  const [feedback, setFeedback] = useState<string | null>(null);
+  // Removed feedback state
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,11 +51,11 @@ export default function PronunciationPage() {
 
 
   const startRecording = async () => {
-    if (recordingState !== 'idle' && recordingState !== 'finished' && recordingState !== 'error') return;
+    if (recordingState !== 'idle' && recordingState !== 'stopped' && recordingState !== 'error') return;
 
     setRecordingState('recording');
     setError(null);
-    setFeedback(null);
+    // Removed feedback reset
     setAudioDataUri(null);
     audioChunksRef.current = [];
     setProgress(0);
@@ -72,8 +71,8 @@ export default function PronunciationPage() {
       };
 
       recorder.onstop = async () => {
-        cleanupRecording(); // Clean up stream tracks
-        setRecordingState('processing');
+        // No longer call cleanupRecording here, it's called by stopRecording or useEffect
+        setRecordingState('processing'); // Indicate processing start
         setProgress(50); // Indicate processing start
 
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); // Use webm or adjust based on browser support
@@ -87,46 +86,28 @@ export default function PronunciationPage() {
              setProgress(0);
              return;
           }
-          setAudioDataUri(base64Audio); // Store for potential playback
-
-          const input: PronunciationFeedbackInput = {
-            text,
-            audioDataUri: base64Audio,
-          };
-
-          try {
-            const result: PronunciationFeedbackOutput = await pronunciationFeedback(input);
-            setFeedback(result.feedback);
-            setRecordingState('finished');
-            setProgress(100);
-             toast({
-              title: "Feedback Received",
-              description: "Your pronunciation feedback is ready.",
-              variant: "default", // Or use "success" if defined
+          setAudioDataUri(base64Audio); // Store for playback
+          setRecordingState('stopped'); // Change state to 'stopped'
+          setProgress(100);
+           toast({
+              title: "Recording Complete",
+              description: "You can now play back your recording.",
+              variant: "default",
             });
-          } catch (err) {
-            console.error('Error getting pronunciation feedback:', err);
-            setError(err instanceof Error ? err.message : 'An unknown error occurred during feedback generation.');
-            setRecordingState('error');
-             setProgress(0);
-             toast({
-              title: "Error Getting Feedback",
-              description: "Could not process your recording. Please try again.",
-              variant: "destructive",
-            });
-          } finally {
-              // Clear the interval if it exists from the recording phase
-              if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current);
-                progressIntervalRef.current = null;
-              }
-          }
+
+          // --- AI Feedback Logic Removed ---
+
         };
          reader.onerror = () => {
             setError('Failed to process audio file.');
             setRecordingState('error');
             setProgress(0);
-            cleanupRecording();
+            cleanupRecording(); // Ensure cleanup on error
+         }
+         // Clear the interval if it exists from the recording phase
+         if (progressIntervalRef.current) {
+             clearInterval(progressIntervalRef.current);
+             progressIntervalRef.current = null;
          }
       };
 
@@ -137,7 +118,8 @@ export default function PronunciationPage() {
        progressIntervalRef.current = setInterval(() => {
          setProgress(prev => {
              const nextProgress = prev + (100 / (maxRecordTime / 100));
-             if (nextProgress >= 50) { // Cap at 50% during recording phase
+             // Cap at 50% during recording phase, stop recorder if time limit reached
+             if (nextProgress >= 50) {
                  clearInterval(progressIntervalRef.current!);
                  progressIntervalRef.current = null;
                  if(mediaRecorderRef.current?.state === 'recording') {
@@ -173,6 +155,8 @@ export default function PronunciationPage() {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
+      // Call cleanup here after stopping
+      cleanupRecording();
     }
   };
 
@@ -188,7 +172,8 @@ export default function PronunciationPage() {
     <div className="max-w-3xl mx-auto space-y-8">
        <section className="text-center">
          <h1 className="text-3xl md:text-4xl font-bold mb-2">Pronunciation Practice</h1>
-         <p className="text-lg text-muted-foreground">Record yourself reading the text below and get instant AI feedback.</p>
+         {/* Updated description */}
+         <p className="text-lg text-muted-foreground">Record yourself reading the text below and listen back.</p>
        </section>
 
       <Card className="shadow-lg">
@@ -206,7 +191,8 @@ export default function PronunciationPage() {
             disabled={recordingState === 'recording' || recordingState === 'processing'}
           />
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            {recordingState === 'idle' || recordingState === 'finished' || recordingState === 'error' ? (
+            {/* Button Logic Adjusted */}
+            {recordingState === 'idle' || recordingState === 'stopped' || recordingState === 'error' ? (
               <Button onClick={startRecording} size="lg" disabled={!text.trim()}>
                 <Mic className="mr-2 h-5 w-5" /> Start Recording
               </Button>
@@ -219,16 +205,24 @@ export default function PronunciationPage() {
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
               </Button>
             )}
-             {audioDataUri && (recordingState === 'finished' || recordingState === 'error') && (
+             {audioDataUri && (recordingState === 'stopped' || recordingState === 'error') && (
                  <Button onClick={playAudio} variant="outline" size="lg">
                     <Volume2 className="mr-2 h-5 w-5" /> Play Recording
                  </Button>
              )}
           </div>
-           {(recordingState === 'recording' || recordingState === 'processing' || recordingState === 'finished') && (
+           {(recordingState === 'recording' || recordingState === 'processing' || recordingState === 'stopped') && (
             <Progress value={progress} className="w-full mt-4" />
           )}
         </CardContent>
+        {/* Footer for Try Again Button */}
+        {(recordingState === 'stopped' || recordingState === 'error') && (
+             <CardFooter className="justify-center">
+                <Button onClick={startRecording} variant="link" className="text-primary">
+                    Record again?
+                </Button>
+            </CardFooter>
+         )}
       </Card>
 
       {error && (
@@ -239,29 +233,8 @@ export default function PronunciationPage() {
         </Alert>
       )}
 
-      {recordingState === 'finished' && feedback && (
-        <Card className="shadow-lg border-accent">
-          <CardHeader>
-             <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-6 w-6 text-accent" /> Pronunciation Feedback
-             </CardTitle>
-             <CardDescription>Here's how you can improve your pronunciation:</CardDescription>
-          </CardHeader>
-          <CardContent>
-             {/* Improve formatting of feedback */}
-             <div className="prose dark:prose-invert max-w-none">
-              {feedback.split('\n').map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-              ))}
-            </div>
-          </CardContent>
-           <CardFooter>
-              <Button onClick={startRecording} variant="link" className="text-primary">
-                Try again?
-              </Button>
-           </CardFooter>
-        </Card>
-      )}
+      {/* --- Feedback Card Removed --- */}
+
     </div>
   );
 }

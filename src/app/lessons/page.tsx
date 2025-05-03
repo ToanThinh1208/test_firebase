@@ -26,9 +26,9 @@ const lessons: Lesson[] = [
 function getIconForType(type: Lesson['type']) {
   switch (type) {
     case 'Grammar': return <BookText className="h-5 w-5 text-primary" />;
-    case 'Vocabulary': return <BookText className="h-5 w-5 text-yellow-500" />; // Adjusted icon/color
+    case 'Vocabulary': return <BookText className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />; // Adjusted icon/color with dark mode
     case 'Pronunciation': return <Ear className="h-5 w-5 text-accent" />;
-    case 'Conversation': return <PlayCircle className="h-5 w-5 text-purple-500" />; // Adjusted icon/color
+    case 'Conversation': return <PlayCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />; // Adjusted icon/color with dark mode
     default: return <BookText className="h-5 w-5 text-muted-foreground" />;
   }
 }
@@ -51,8 +51,9 @@ export default function LessonsPage() {
                 <Image
                   src={lesson.imageUrl}
                   alt={lesson.title}
-                  layout="fill"
-                  objectFit="cover"
+                  fill // Use fill instead of layout="fill"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Add sizes prop
+                  style={{ objectFit: 'cover' }} // Use style object for objectFit
                   data-ai-hint={lesson.imageHint}
                  />
               </div>
@@ -62,10 +63,11 @@ export default function LessonsPage() {
                    {getIconForType(lesson.type)}
                    <span className="text-sm font-medium text-muted-foreground">{lesson.type}</span>
                   </div>
+                   {/* Use theme colors and add dark mode support */}
                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                       lesson.level === 'Beginner' ? 'bg-blue-100 text-blue-800' :
-                       lesson.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                       'bg-red-100 text-red-800' // Consider using theme colors
+                       lesson.level === 'Beginner' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                       lesson.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                       'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                    }`}>
                        {lesson.level}
                    </span>

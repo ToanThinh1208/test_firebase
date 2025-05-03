@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Mic } from 'lucide-react'; // Added Mic
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react'; // Use state for dynamic content loading
@@ -54,7 +54,7 @@ The "th" sound can be tricky!
 *   **Voiced /ð/:** Like in "this", "that", "mother". Your vocal cords vibrate. Put your tongue between your teeth and make a sound.
 
 Listen and repeat the examples. Try recording yourself!
-`, interactiveElement: <PronunciationPractice textToPractice="The thirty-three thieves thought that they thrilled the throne throughout Thursday." /> },
+`, interactiveElement: <PronunciationInfo textToPractice="The thirty-three thieves thought that they thrilled the throne throughout Thursday." /> }, // Changed component name
     // Add more lessons as needed
   };
   await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
@@ -70,16 +70,14 @@ function Flashcards() {
   return <div className="mt-4 p-4 border rounded bg-secondary/50"><p className="font-semibold">Flashcards Placeholder</p><p className="text-sm text-muted-foreground">Interactive vocabulary flashcards will appear here.</p></div>;
 }
 
-function PronunciationPractice({ textToPractice }: { textToPractice: string }) {
-    // Basic structure - connect to Pronunciation Feedback component later
+// Renamed PronunciationPractice to PronunciationInfo and removed recording button
+function PronunciationInfo({ textToPractice }: { textToPractice: string }) {
     return (
         <div className="mt-4 p-4 border rounded bg-secondary/50 space-y-2">
-            <p className="font-semibold">Pronunciation Practice</p>
-            <p className="italic text-lg">"{textToPractice}"</p>
-            <p className="text-sm text-muted-foreground">Record yourself saying the sentence above. The Pronunciation Feedback tool will be integrated here.</p>
-             <Button disabled>
-                 <Mic className="mr-2 h-4 w-4" /> Record (Coming Soon)
-            </Button>
+            <p className="font-semibold">Pronunciation Tip</p>
+            <p className="italic text-lg">Practice saying: "{textToPractice}"</p>
+            <p className="text-sm text-muted-foreground">Focus on the 'th' sounds. You can use the <Link href="/pronunciation" className="text-primary underline">Pronunciation Practice</Link> page to record yourself.</p>
+            {/* Removed the disabled recording button */}
         </div>
     );
 }
@@ -144,8 +142,9 @@ export default function LessonPage() {
              <Image
                 src={lessonData.imageUrl}
                 alt={lessonData.title}
-                layout="fill"
-                objectFit="cover"
+                fill // Use fill instead of layout="fill"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Add sizes prop
+                style={{ objectFit: 'cover' }} // Use style object for objectFit
                 data-ai-hint={lessonData.imageHint}
                 priority // Load image faster as it's key content
               />
@@ -154,9 +153,9 @@ export default function LessonPage() {
           <div className="flex justify-between items-center mb-1">
             <span className="text-sm font-medium text-primary">{lessonData.type}</span>
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                       lessonData.level === 'Beginner' ? 'bg-blue-100 text-blue-800' :
-                       lessonData.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                       'bg-red-100 text-red-800'
+                       lessonData.level === 'Beginner' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : // Added dark mode styles
+                       lessonData.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                       'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                    }`}>
               {lessonData.level}
             </span>
@@ -171,13 +170,17 @@ export default function LessonPage() {
                  return <h3 key={index} className="font-semibold text-xl mt-4 mb-2">{paragraph.substring(4)}</h3>;
              }
              if (paragraph.startsWith('*   ')) {
-                  return <li key={index} className="ml-4 list-disc">{paragraph.substring(4)}</li>;
+                  return <li key={index} className="ml-4 ">{paragraph.substring(4)}</li>; // Removed list-disc, handled by prose
              }
               if (paragraph.startsWith('**')) {
-                    // Basic bold handling, limited
+                    // Basic bold handling, limited - better handled by prose or markdown renderer
                    const parts = paragraph.split('**');
                    return <p key={index}>{parts.map((part, i) => i % 2 === 1 ? <strong key={i}>{part}</strong> : part)}</p>
               }
+              // Ensure empty paragraphs are not rendered or render a break
+               if (paragraph.trim() === '') {
+                  return <br key={index} />;
+               }
              return <p key={index}>{paragraph}</p>;
            })}
 
@@ -185,8 +188,9 @@ export default function LessonPage() {
           {lessonData.interactiveElement}
 
           <div className="mt-8 flex justify-between items-center border-t pt-4">
-            <Button variant="outline">Previous Lesson</Button>
-             <Button variant="default">
+             {/* Add logic for previous/next lesson links */}
+            <Button variant="outline" disabled>Previous Lesson</Button>
+             <Button variant="default" disabled>
                 Next Lesson <CheckCircle className="ml-2 h-4 w-4" />
              </Button>
           </div>
@@ -231,26 +235,4 @@ function LessonLoadingSkeleton() {
     );
 }
 
-// Placeholder Component for Pronunciation Feedback (to be fully implemented)
-import { Mic } from 'lucide-react'; // Assuming Mic is available
-
-// Placeholder Pronunciation Feedback Component
-function PronunciationFeedbackPlaceholder() {
-    return (
-        <div className="mt-6 p-4 border rounded bg-secondary/50 space-y-3">
-            <h3 className="font-semibold text-lg">Practice Your Pronunciation</h3>
-            <p className="text-sm text-muted-foreground">Record yourself saying a sample sentence and get AI feedback.</p>
-            <p className="italic">"The rain in Spain stays mainly in the plain."</p>
-            <div className="flex items-center gap-4">
-                 <Button>
-                    <Mic className="mr-2 h-4 w-4" /> Start Recording
-                </Button>
-                 <span className="text-sm text-muted-foreground">Recording Status...</span>
-            </div>
-             {/* Placeholder for feedback display */}
-            <div className="mt-4 p-3 bg-background rounded border border-dashed h-20 flex items-center justify-center text-muted-foreground">
-                Feedback will appear here...
-            </div>
-        </div>
-    );
-}
+// Removed PronunciationFeedbackPlaceholder as AI is removed

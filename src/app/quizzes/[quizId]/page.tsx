@@ -73,6 +73,7 @@ export default function QuizPage() {
   const [quizState, setQuizState] = useState<QuizState>('loading');
   const [error, setError] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false); // Show feedback after answer
+  const [lastAnswerCorrect, setLastAnswerCorrect] = useState(false); // Track correctness for feedback display
 
     // State for confetti
   const [showConfetti, setShowConfetti] = useState(false);
@@ -108,13 +109,13 @@ export default function QuizPage() {
     // Update window size for confetti
     useEffect(() => {
         const handleResize = () => {
-            setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+            if (typeof window !== 'undefined') {
+                setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+            }
         };
-        if (typeof window !== 'undefined') {
-            handleResize(); // Set initial size
-            window.addEventListener('resize', handleResize);
-            return () => window.removeEventListener('resize', handleResize);
-        }
+        handleResize(); // Set initial size
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
 
@@ -128,12 +129,13 @@ export default function QuizPage() {
   const handleSubmitAnswer = () => {
     if (!selectedAnswer || !currentQuestion) return;
 
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+    const answerIsCorrect = selectedAnswer === currentQuestion.correctAnswer; // Renamed variable
     const questionId = currentQuestion.id;
 
-    setAnswersStatus(prev => ({ ...prev, [questionId]: isCorrect ? 'correct' : 'incorrect' }));
+    setAnswersStatus(prev => ({ ...prev, [questionId]: answerIsCorrect ? 'correct' : 'incorrect' }));
+    setLastAnswerCorrect(answerIsCorrect); // Store correctness for feedback button
 
-    if (isCorrect) {
+    if (answerIsCorrect) {
       setScore(prev => prev + 1);
     }
      setShowFeedback(true); // Show correct/incorrect styling
@@ -147,7 +149,7 @@ export default function QuizPage() {
             setCurrentQuestionIndex(prev => prev + 1);
         } else {
             setQuizState('results');
-             if (isCorrect) { // Trigger confetti on the last correct answer
+             if (answerIsCorrect) { // Trigger confetti on the last correct answer
                 setShowConfetti(true);
                 setTimeout(() => setShowConfetti(false), 5000); // Stop confetti after 5 seconds
             }
@@ -213,9 +215,9 @@ export default function QuizPage() {
               Your Score: {score} / {totalQuestions} ({percentage}%)
             </p>
             {passed ? (
-               <p className="text-lg text-green-600 font-medium flex items-center justify-center gap-2"><Check className="h-6 w-6"/> Great Job! You passed!</p>
+               <p className="text-lg text-green-600 dark:text-green-400 font-medium flex items-center justify-center gap-2"><Check className="h-6 w-6"/> Great Job! You passed!</p>
             ) : (
-               <p className="text-lg text-red-600 font-medium flex items-center justify-center gap-2"><X className="h-6 w-6"/> Keep Practicing!</p>
+               <p className="text-lg text-red-600 dark:text-red-400 font-medium flex items-center justify-center gap-2"><X className="h-6 w-6"/> Keep Practicing!</p>
             )}
               {/* Optional: Show review answers button */}
           </CardContent>
@@ -265,13 +267,13 @@ export default function QuizPage() {
           >
             {currentQuestion.options.map((option, index) => {
                const isSelected = selectedAnswer === option;
-               const isCorrect = option === currentQuestion.correctAnswer;
+               const isCorrectOption = option === currentQuestion.correctAnswer; // Renamed variable
                let itemClass = '';
                 if (showFeedback) {
-                    if (isCorrect) {
-                        itemClass = 'border-green-500 bg-green-50'; // Correct answer style
-                    } else if (isSelected && !isCorrect) {
-                        itemClass = 'border-red-500 bg-red-50'; // Incorrect selected answer style
+                    if (isCorrectOption) {
+                        itemClass = 'border-green-500 bg-green-50 dark:bg-green-900/30 dark:border-green-700'; // Correct answer style + dark
+                    } else if (isSelected && !isCorrectOption) {
+                        itemClass = 'border-red-500 bg-red-50 dark:bg-red-900/30 dark:border-red-700'; // Incorrect selected answer style + dark
                     }
                 }
 
@@ -280,13 +282,13 @@ export default function QuizPage() {
               <Label
                  key={index}
                  htmlFor={`option-${index}`}
-                 className={`flex items-center space-x-3 p-4 border rounded-md cursor-pointer transition-colors ${itemClass} ${showFeedback ? 'cursor-default' : 'hover:bg-accent/50'}`}
+                 className={`flex items-center space-x-3 p-4 border rounded-md transition-colors ${itemClass} ${showFeedback ? 'cursor-default' : 'hover:bg-accent/50 cursor-pointer'}`}
                 >
                 <RadioGroupItem value={option} id={`option-${index}`} />
                 <span>{option}</span>
-                 {showFeedback && isSelected && isCorrect && <Check className="ml-auto h-5 w-5 text-green-600" />}
-                 {showFeedback && isSelected && !isCorrect && <X className="ml-auto h-5 w-5 text-red-600" />}
-                 {showFeedback && !isSelected && isCorrect && <Check className="ml-auto h-5 w-5 text-green-600 opacity-70" />} {/* Show correct if not selected */}
+                 {showFeedback && isSelected && isCorrectOption && <Check className="ml-auto h-5 w-5 text-green-600 dark:text-green-400" />}
+                 {showFeedback && isSelected && !isCorrectOption && <X className="ml-auto h-5 w-5 text-red-600 dark:text-red-400" />}
+                 {showFeedback && !isSelected && isCorrectOption && <Check className="ml-auto h-5 w-5 text-green-600 dark:text-green-400 opacity-70" />} {/* Show correct if not selected */}
               </Label>
             )})}
           </RadioGroup>
@@ -295,9 +297,10 @@ export default function QuizPage() {
           <Button
             onClick={handleSubmitAnswer}
             disabled={!selectedAnswer || showFeedback} // Disable if no answer or feedback is shown
+            className={showFeedback ? (lastAnswerCorrect ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700') : ''} // Change button color based on correctness
           >
-             {showFeedback ? (isCorrect ? 'Correct!' : 'Incorrect') : 'Submit Answer'}
-              {showFeedback && (selectedAnswer === currentQuestion.correctAnswer ? <Check className="ml-2 h-4 w-4"/> : <X className="ml-2 h-4 w-4"/>) }
+             {showFeedback ? (lastAnswerCorrect ? 'Correct!' : 'Incorrect') : 'Submit Answer'}
+              {showFeedback && (lastAnswerCorrect ? <Check className="ml-2 h-4 w-4"/> : <X className="ml-2 h-4 w-4"/>) }
           </Button>
         </CardFooter>
       </Card>

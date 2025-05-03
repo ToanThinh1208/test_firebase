@@ -13,7 +13,7 @@ export default function Home() {
           Unlock Your English Potential with <span className="text-primary">LinguaLeap</span>
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-          Master grammar, perfect your pronunciation, and conquer vocabulary with our engaging lessons and AI-powered feedback.
+          Master grammar, perfect your pronunciation, and conquer vocabulary with our engaging lessons and interactive tools.
         </p>
         <Link href="/lessons">
           <Button size="lg">Start Learning Today</Button>
@@ -22,8 +22,9 @@ export default function Home() {
            <Image
               src="https://picsum.photos/1200/675"
               alt="Person learning English online"
-              layout="fill"
-              objectFit="cover"
+              fill // Use fill instead of layout="fill"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px" // Add sizes prop
+              style={{ objectFit: 'cover' }} // Use style object for objectFit
               data-ai-hint="language learning online class"
               priority
             />
@@ -56,8 +57,8 @@ export default function Home() {
              <div className="mx-auto bg-accent/10 p-3 rounded-full w-fit mb-4">
               <Mic className="h-8 w-8 text-accent" />
             </div>
-            <CardTitle>AI Pronunciation Coach</CardTitle>
-            <CardDescription>Get instant, personalized feedback on your pronunciation to speak clearly and confidently.</CardDescription>
+            <CardTitle>Pronunciation Practice</CardTitle> {/* Updated Title */}
+            <CardDescription>Record yourself and listen back to improve your speaking clarity and confidence.</CardDescription> {/* Updated Description */}
           </CardHeader>
           <CardContent>
             <Link href="/pronunciation">
