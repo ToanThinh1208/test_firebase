@@ -50,5 +50,5 @@ if (!googleApiKey) {
 // Export the initialized instance or the dummy object
 export const ai = aiInstance;
 
-// Example of defining a schema (can be used in flows/prompts)
+// Example of defining a schema (can be used in flows/prompts) - Removed as it causes 'use server' error
 // export const ExampleSchema = z.object({ message: z.string() });
