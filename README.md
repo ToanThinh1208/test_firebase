@@ -28,7 +28,8 @@ To get started, take a look at src/app/page.tsx.
         # ... other Firebase vars
         ```
     *   **Important:** Replace `"YOUR_..."` with your actual Supabase URL and anon key.
-    *   **Enable Email Provider:** Go to **Authentication** > **Providers** in your Supabase dashboard and enable the **Email** provider. You might want to disable **Confirm email** during development for easier testing, but remember to enable it for production.
+    *   **Enable Email Provider & Check Confirmation:** Go to **Authentication** > **Providers** in your Supabase dashboard and enable the **Email** provider. **Crucially, ensure the "Confirm email" setting is ENABLED** if you want users to verify their email addresses after signing up. Disabling it allows instant login but is less secure.
+    *   **Note on Email Delivery:** Supabase uses its own email service by default on the free plan, which might have limitations or land in spam/junk folders. For production, consider configuring a custom SMTP provider under **Authentication** > **Settings** > **SMTP Settings** for better deliverability.
 
 3.  **Run Development Server:**
     ```bash

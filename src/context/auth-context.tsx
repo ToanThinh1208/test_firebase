@@ -10,7 +10,7 @@ interface AuthContextType {
   currentUser: User | null;
   session: Session | null; // Add session state
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<{ success: boolean; error?: AuthError | null }>;
+  signUp: (email: string, password: string) => Promise<{ success: boolean; message?: string; error?: AuthError | null }>; // Added message field
   logIn: (email: string, password: string) => Promise<{ success: boolean; error?: AuthError | null }>;
   logOut: () => Promise<{ error?: AuthError | null }>;
 }
@@ -58,28 +58,38 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     };
   }, [getSession]);
 
-  const signUp = async (email: string, password: string): Promise<{ success: boolean; error?: AuthError | null }> => {
+  const signUp = async (email: string, password: string): Promise<{ success: boolean; message?: string; error?: AuthError | null }> => {
     setLoading(true);
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/login` : '/login'; // Fallback for server-side rendering if needed, although this context is client-side
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         // Ensure this matches the URL where users should land after clicking the confirmation link.
-        // It should ideally be a page that handles the confirmation token (Supabase handles this server-side, but the user needs to land somewhere).
-        // '/login' is a common choice, assuming your Supabase redirect settings are configured.
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: redirectUrl,
       },
     });
 
     setLoading(false);
+    let message: string | undefined;
     if (error) {
        console.error("Sign up error:", error);
+    } else if (data.user && data.user.identities?.length === 0) {
+        // This condition might indicate the user exists but needs confirmation (heuristic, check Supabase docs for specifics)
+         message = "Sign up attempt successful, but user might already exist or require confirmation. Please check your email (including spam/junk folders) for a confirmation link. If you don't receive it within a few minutes, please try logging in or resetting your password.";
+         console.warn("Sign up successful, but user may already exist or need confirmation.");
+    }
+     else if (data.user) {
+      // Successful signup, user object exists (confirmation might still be required depending on Supabase settings)
+      message = "Sign up successful! Please check your email (including spam/junk folders) for a confirmation link. It might take a few minutes to arrive.";
+      console.log("Sign up successful. Confirmation email likely sent.");
     } else {
-        // Inform the user to check their email for confirmation, especially if confirmation is enabled in Supabase settings.
-        console.log("Sign up attempt successful. If email confirmation is enabled, please check your email.");
+        // Fallback case if no user data and no error (should be rare)
+         message = "Sign up process initiated. Please check your email (including spam/junk folders) for a confirmation link if required.";
+         console.log("Sign up attempt finished without user data or error.");
     }
     // Success is true if there's no immediate error, but confirmation might still be pending.
-    return { success: !error, error };
+    return { success: !error, message, error };
   };
 
   const logIn = async (email: string, password: string): Promise<{ success: boolean; error?: AuthError | null }> => {

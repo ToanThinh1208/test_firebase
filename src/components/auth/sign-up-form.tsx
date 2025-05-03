@@ -41,7 +41,7 @@ export function SignUpForm() {
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false); // Add loading state
-  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false); // State for confirmation message
+  const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null); // Use string for detailed message
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,22 +55,21 @@ export function SignUpForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null); // Clear previous errors
     setIsLoading(true); // Set loading state
-    setShowConfirmationMessage(false); // Reset confirmation message
+    setConfirmationMessage(null); // Reset confirmation message
 
-    const { success, error: authError } = await signUp(values.email, values.password);
+    // Get detailed message from signUp context function
+    const { success, message, error: authError } = await signUp(values.email, values.password);
     setIsLoading(false); // Reset loading state
 
     if (success) {
-       // Check if Supabase requires email confirmation (this depends on your Supabase settings)
-       // For now, we assume confirmation might be needed and show a generic success message.
-       setShowConfirmationMessage(true); // Show confirmation message instead of redirecting immediately
+       // Show the detailed message from the context
+       setConfirmationMessage(message || 'Sign up process initiated. Please check your email (including spam/junk folders) for a confirmation link if required.');
        form.reset(); // Reset form fields
-      toast({
-        title: 'Account Creation Pending',
-        description: 'Please check your email to confirm your account.',
-      });
+       toast({
+         title: 'Sign Up Initiated',
+         description: message || 'Please check your email for confirmation.',
+       });
        // Don't redirect immediately, let the user see the confirmation message.
-       // router.push('/');
     } else {
        // Handle Supabase Auth errors
         let errorMessage = 'An unexpected error occurred. Please try again.';
@@ -80,6 +79,10 @@ export function SignUpForm() {
             } else if (authError.message.includes('Password should be at least 6 characters.')) { // Example Supabase weak password error
                  errorMessage = 'Password is too weak. Please choose a stronger password (at least 6 characters).';
             }
+             // Add check for missing 'Confirm email' setting - heuristic based on error message
+             else if (authError.message.includes('Unable to validate email address: invalid format') || authError.message.includes('Error sending confirmation mail')) {
+                  errorMessage = 'Could not send confirmation email. Please double-check your email address or contact support. Ensure email confirmation is enabled in your project settings.';
+             }
             // Add more specific Supabase error checks if needed
              else {
                  errorMessage = `Sign up failed: ${authError.message}`;
@@ -95,19 +98,20 @@ export function SignUpForm() {
     }
   }
 
-    if (showConfirmationMessage) {
+    if (confirmationMessage) { // Check if there's a confirmation message to display
         return (
             <Card className="w-full max-w-md mx-auto shadow-lg">
                 <CardHeader>
                     <CardTitle className="text-2xl text-center">Check Your Email</CardTitle>
-                     <CardDescription className="text-center flex flex-col items-center gap-4">
+                     <CardDescription className="text-center flex flex-col items-center gap-4 pt-4">
                          <CheckCircle className="h-12 w-12 text-green-500" />
-                        We've sent a confirmation link to your email address. Please click the link to activate your account.
+                         {/* Display the detailed confirmation message */}
+                         {confirmationMessage}
                     </CardDescription>
                 </CardHeader>
-                 <CardFooter className="flex justify-center text-sm">
+                 <CardFooter className="flex justify-center text-sm pt-6">
                     <p className="text-muted-foreground">
-                      Already confirmed?{' '}
+                      Already confirmed or having trouble?{' '}
                       <Link href="/login" className="text-primary hover:underline">
                         Log In
                       </Link>
