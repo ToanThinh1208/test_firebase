@@ -1,5 +1,5 @@
 // src/ai/ai-instance.ts
-import { genkit } from '@genkit-ai/core'; // Correct import for v1.x
+import genkit from '@genkit-ai/core'; // Use default import for genkit
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'zod'; // Keep zod import if needed for schemas defined elsewhere
 
