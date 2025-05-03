@@ -1,9 +1,12 @@
 // src/ai/ai-instance.ts
-'use server'; // Add server directive as this might be used by server components/actions
+// Removed 'use server' directive as this file primarily sets up and exports the AI instance, not Server Actions directly.
+// Flows that import 'ai' should retain their 'use server' directive.
 
 import { genkit } from '@genkit-ai/core'; // Correct: Use named import for genkit v1.x
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'zod'; // Keep zod import if needed for schemas defined elsewhere
+// Zod might still be needed if schemas are defined and used *within* this file for configuration,
+// but typically schemas are defined in the flow files. Remove if unused.
+// import { z } from 'zod';
 
 // Check if the API key is available in environment variables
 const googleApiKey = process.env.GOOGLE_API_KEY;
@@ -16,11 +19,11 @@ if (!googleApiKey) {
     );
     // Create a dummy 'ai' object that throws errors if used
     aiInstance = {
-        defineFlow: () => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
-        definePrompt: () => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
-        defineTool: () => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
-        generate: async () => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
-        generateStream: () => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
+        defineFlow: (): never => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
+        definePrompt: (): never => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
+        defineTool: (): never => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
+        generate: async (): Promise<never> => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
+        generateStream: (): never => { throw new Error("Genkit not initialized: GOOGLE_API_KEY is missing."); },
         // Add other Genkit methods used in your application here, all throwing an error.
     };
 
@@ -37,11 +40,11 @@ if (!googleApiKey) {
         console.error("Failed to initialize Genkit even with API key:", e);
         // Provide a fallback dummy object in case initialization fails unexpectedly
          aiInstance = {
-             defineFlow: () => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
-             definePrompt: () => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
-             defineTool: () => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
-             generate: async () => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
-             generateStream: () => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
+             defineFlow: (): never => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
+             definePrompt: (): never => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
+             defineTool: (): never => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
+             generate: async (): Promise<never> => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
+             generateStream: (): never => { throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}`); },
              // Add other methods if necessary
          };
     }
@@ -50,5 +53,6 @@ if (!googleApiKey) {
 // Export the initialized instance or the dummy object
 export const ai = aiInstance;
 
-// Example of defining a schema (can be used in flows/prompts) - Removed as it causes 'use server' error
+// Removed the ExampleSchema export as it violates 'use server' rules if the directive were present,
+// and schemas are typically defined within the flow files that use them.
 // export const ExampleSchema = z.object({ message: z.string() });
