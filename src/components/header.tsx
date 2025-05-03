@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, BookOpen, Mic, Trophy, User, LogOut } from 'lucide-react'; // Added User, LogOut
+import { Menu, BookOpen, Mic, Trophy, User, LogOut, LayoutDashboard } from 'lucide-react'; // Added LayoutDashboard
 import { useAuth } from '@/context/auth-context'; // Import useAuth
 import {
   DropdownMenu,
@@ -24,17 +24,24 @@ export function Header() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const navItems = [
-    { href: '/', label: 'Home', icon: BookOpen },
-    { href: '/lessons', label: 'Lessons', icon: BookOpen },
-    { href: '/pronunciation', label: 'Pronunciation', icon: Mic },
-    { href: '/quizzes', label: 'Quizzes', icon: Trophy },
+  // Define base navigation items
+  const baseNavItems = [
+    { href: '/', label: 'Home', icon: BookOpen, requiresAuth: false },
+    { href: '/lessons', label: 'Lessons', icon: BookOpen, requiresAuth: false },
+    { href: '/pronunciation', label: 'Pronunciation', icon: Mic, requiresAuth: false },
+    { href: '/quizzes', label: 'Quizzes', icon: Trophy, requiresAuth: false },
   ];
 
-    const handleLogout = async () => {
+  // Add dashboard link only if logged in
+  const navItems = currentUser
+    ? [ { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, requiresAuth: true }, ...baseNavItems ]
+    : baseNavItems;
+
+  const handleLogout = async () => {
     await logOut();
     toast({ title: 'Logged Out Successfully' });
     router.push('/'); // Redirect to home after logout
+    router.refresh(); // Force refresh potentially needed data on other pages
   };
 
     // Function to get initials from email
@@ -56,14 +63,16 @@ export function Header() {
             <span className="font-bold">LinguaLeap</span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="transition-colors hover:text-foreground/80 text-foreground/60"
-              >
-                {item.label}
-              </Link>
+            {navItems
+                .filter(item => !item.requiresAuth || currentUser) // Filter out auth-required items if not logged in
+                .map((item) => (
+                <Link
+                    key={item.label}
+                    href={item.href}
+                    className="transition-colors hover:text-foreground/80 text-foreground/60"
+                >
+                    {item.label}
+                </Link>
             ))}
           </nav>
         </div>
@@ -85,15 +94,17 @@ export function Header() {
                 <span className="font-bold">LinguaLeap</span>
               </Link>
               <nav className="flex flex-col space-y-3">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className="flex items-center space-x-2 px-6 py-2 text-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                  </Link>
+                {navItems
+                    .filter(item => !item.requiresAuth || currentUser) // Filter out auth-required items if not logged in
+                    .map((item) => (
+                    <Link
+                        key={item.label}
+                        href={item.href}
+                        className="flex items-center space-x-2 px-6 py-2 text-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
+                    >
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                    </Link>
                 ))}
                  <DropdownMenuSeparator className="mx-6" />
                  {/* Auth Buttons in Mobile Menu */}
@@ -150,7 +161,13 @@ export function Header() {
                         </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled> {/* Add links to profile/settings later */}
+                    <Link href="/dashboard">
+                        <DropdownMenuItem>
+                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                            <span>Dashboard</span>
+                        </DropdownMenuItem>
+                    </Link>
+                     <DropdownMenuItem disabled> {/* Add links to profile/settings later */}
                         <User className="mr-2 h-4 w-4" />
                         <span>Profile</span>
                     </DropdownMenuItem>
