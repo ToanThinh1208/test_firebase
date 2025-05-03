@@ -14,7 +14,8 @@ interface Lesson {
   imageHint: string;
 }
 
-const lessons: Lesson[] = [
+// Export the lessons array
+export const lessons: Lesson[] = [
   { id: 'g1', title: 'Mastering the Present Simple', description: 'Understand and use the present simple tense correctly.', type: 'Grammar', level: 'Beginner', imageUrl: 'https://picsum.photos/400/200?random=1', imageHint: 'grammar book pencil' },
   { id: 'v1', title: 'Essential Travel Vocabulary', description: 'Learn key words and phrases for your next trip.', type: 'Vocabulary', level: 'Beginner', imageUrl: 'https://picsum.photos/400/200?random=2', imageHint: 'travel suitcase map' },
   { id: 'p1', title: 'The "th" Sound', description: 'Practice the voiced and unvoiced "th" sounds.', type: 'Pronunciation', level: 'Intermediate', imageUrl: 'https://picsum.photos/400/200?random=3', imageHint: 'mouth speaking soundwave' },
