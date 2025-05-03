@@ -46,7 +46,7 @@ export async function getProfile(userId: string, supabaseClient: SupabaseClient<
  * Updates (or creates if it doesn't exist) a user profile in the 'profiles' table.
  *
  * @param userId - The ID of the user whose profile is to be updated/created.
- * @param updates - An object containing the profile fields to update. Must include 'id'.
+ * @param updates - An object containing the profile fields to update.
  * @param supabaseClient - An optional Supabase client instance. Defaults to the shared client instance.
  * @returns A promise that resolves to an object indicating success or failure, with an optional error.
  */
@@ -56,6 +56,7 @@ export async function updateProfile(userId: string, updates: ProfileUpdate, supa
     }
 
     // Ensure 'updated_at' is set for the update operation
+    // Supabase automatically handles created_at/updated_at if configured in the table, but explicit setting is also fine
     const profileDataWithTimestamp = {
         ...updates,
         id: userId, // Ensure the id is part of the object being upserted
@@ -64,10 +65,11 @@ export async function updateProfile(userId: string, updates: ProfileUpdate, supa
 
     try {
         // Use upsert: updates if profile exists, inserts if it doesn't
+        // Set `defaultToNull: false` to prevent overwriting existing fields with null if they are not provided in `updates`
         const { error } = await supabaseClient
             .from('profiles')
-            .upsert(profileDataWithTimestamp)
-            .select() // Select to potentially check the result, though not used here
+            .upsert(profileDataWithTimestamp, { onConflict: 'id', defaultToNull: false }) // Ensure `id` is the conflict column
+            .select(); // Select to check the result, returns the upserted row(s)
 
         if (error) {
             console.error('Error updating profile:', error);

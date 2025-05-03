@@ -50,8 +50,12 @@ export default function ProfilePage() {
         setProfile(data);
         form.reset({ username: data.username || '' }); // Reset form with fetched data
       } else {
-          // If no profile exists, initialize form with empty username
-          form.reset({ username: '' });
+          // If no profile exists, initialize form with empty username or default based on email
+          const defaultUsername = currentUser.email?.split('@')[0] || '';
+          form.reset({ username: defaultUsername });
+          // Optionally, create the profile row if it doesn't exist upon loading
+          await updateProfile(currentUser.id, { username: defaultUsername });
+          setProfile({ id: currentUser.id, username: defaultUsername, updated_at: new Date().toISOString() }); // Update local state
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -80,8 +84,14 @@ export default function ProfilePage() {
     setIsSaving(true);
     const updates = {
       username: values.username,
-      // id: currentUser.id, // id is included in updateProfile service call
+      // id: currentUser.id, // id is included in updateProfile service call implicitly by userId parameter
     };
+
+    // Ensure username is not empty or only whitespace before saving, unless null is intended
+    if (typeof updates.username === 'string' && updates.username.trim() === '') {
+         updates.username = null; // Store as null if empty or whitespace
+    }
+
 
     const { success, error } = await updateProfile(currentUser.id, updates);
 
@@ -91,6 +101,7 @@ export default function ProfilePage() {
       toast({
         title: 'Profile Updated',
         description: 'Your profile has been successfully updated.',
+        variant: 'default',
       });
       // Optionally re-fetch profile data to confirm update
       fetchProfileData();
@@ -149,7 +160,8 @@ export default function ProfilePage() {
                         id="username"
                         placeholder="Enter your username"
                         {...field}
-                        value={field.value ?? ''} // Handle null value
+                        value={field.value ?? ''} // Handle null value from DB
+                        onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)} // Send null if empty
                         disabled={isSaving}
                       />
                     </FormControl>
@@ -171,11 +183,11 @@ export default function ProfilePage() {
             </form>
           </Form>
         </CardContent>
-         {/* <CardFooter>
+         <CardFooter>
              <p className="text-xs text-muted-foreground">
                  Last updated: {profile?.updated_at ? new Date(profile.updated_at).toLocaleString() : 'N/A'}
              </p>
-         </CardFooter> */}
+         </CardFooter>
       </Card>
     </div>
   );
