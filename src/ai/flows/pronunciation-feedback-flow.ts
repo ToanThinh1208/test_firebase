@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/ai-instance';
-import { z } from 'zod'; // Corrected import
+import { z } from 'zod'; // Ensure zod is imported
 
 // Define the input schema for the pronunciation feedback flow
 const PronunciationInputSchema = z.object({
@@ -72,7 +72,14 @@ const pronunciationFeedbackFlow = ai.defineFlow<
   async (input) => {
     console.log('Received input for pronunciation feedback:', input.textToPractice); // Log input text
     try {
+      // Check if 'ai.generate' exists and is a function before calling
+      if (!ai || typeof ai.generate !== 'function') {
+         throw new Error("Genkit AI instance is not properly initialized or generate function is missing.");
+      }
+
+      // Use the prompt object directly (it's awaitable)
       const { output } = await pronunciationPrompt(input);
+
 
       if (!output) {
           console.error("Pronunciation feedback prompt returned no output.");
@@ -91,7 +98,6 @@ const pronunciationFeedbackFlow = ai.defineFlow<
     } catch (error) {
         console.error('Error in pronunciationFeedbackFlow:', error);
         // Re-throw or handle error appropriately
-        // For now, let's return a structured error message in the expected format
          throw new Error(`Failed to get pronunciation feedback: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -103,5 +109,9 @@ const pronunciationFeedbackFlow = ai.defineFlow<
  * @returns A promise that resolves to the pronunciation feedback.
  */
 export async function getPronunciationFeedback(input: PronunciationInput): Promise<PronunciationOutput> {
+  // Check if the flow function itself is valid before calling
+  if (!pronunciationFeedbackFlow || typeof pronunciationFeedbackFlow !== 'function') {
+    throw new Error("Pronunciation feedback flow is not properly defined or Genkit is not initialized.");
+  }
   return pronunciationFeedbackFlow(input);
 }
