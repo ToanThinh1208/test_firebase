@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, Mic, Trophy } from 'lucide-react';
+import { BookOpen, Mic, Headphones, Edit3 } from 'lucide-react'; // Updated icons
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/context/auth-context'; // Import useAuth
@@ -19,7 +19,7 @@ export default function Home() {
           Unlock Your English Potential with <span className="text-primary">LinguaLeap</span>
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-          Master grammar, perfect your pronunciation, and conquer vocabulary with our engaging lessons and interactive tools.
+          Master grammar, perfect your pronunciation, and conquer vocabulary with our engaging lessons and interactive tools for Reading, Listening, Writing, and Speaking.
         </p>
         {/* Conditional CTA Button */}
         {!loading && (
@@ -48,15 +48,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* Features Section - Updated for 4 skills */}
+      <section className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* Reading */}
         <Card className="text-center shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-4">
               <BookOpen className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle>Interactive Lessons</CardTitle>
-            <CardDescription>Engage with dynamic lessons covering grammar, vocabulary, and real-world conversations.</CardDescription>
+            <CardTitle>Reading & Grammar</CardTitle>
+            <CardDescription>Engage with dynamic lessons covering grammar, vocabulary, and reading comprehension.</CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/lessons">
@@ -65,34 +66,58 @@ export default function Home() {
           </CardContent>
         </Card>
 
+        {/* Listening */}
+        <Card className="text-center shadow-md hover:shadow-lg transition-shadow duration-300">
+          <CardHeader>
+             <div className="mx-auto bg-blue-100 dark:bg-blue-900 p-3 rounded-full w-fit mb-4"> {/* Adjusted color */}
+              <Headphones className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <CardTitle>Listening Practice</CardTitle>
+            <CardDescription>Improve your comprehension with varied audio exercises and activities.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Placeholder link - update when listening section exists */}
+            <Link href="/lessons">
+              <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400 dark:hover:text-gray-900">
+                Practice Listening
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Writing */}
+        <Card className="text-center shadow-md hover:shadow-lg transition-shadow duration-300">
+          <CardHeader>
+            <div className="mx-auto bg-purple-100 dark:bg-purple-900 p-3 rounded-full w-fit mb-4"> {/* Adjusted color */}
+              <Edit3 className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+            </div>
+            <CardTitle>Writing Exercises</CardTitle>
+            <CardDescription>Develop your writing skills through guided exercises and feedback opportunities.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             {/* Placeholder link - update when writing section exists */}
+            <Link href="/quizzes">
+              <Button variant="outline" className="border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-400 dark:hover:text-gray-900">
+                Practice Writing
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Speaking */}
         <Card className="text-center shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
              <div className="mx-auto bg-accent/10 p-3 rounded-full w-fit mb-4">
               <Mic className="h-8 w-8 text-accent" />
             </div>
-            <CardTitle>Pronunciation Practice</CardTitle>
-            <CardDescription>Record yourself and listen back to improve your speaking clarity and confidence.</CardDescription>
+            <CardTitle>Speaking & Pronunciation</CardTitle>
+            <CardDescription>Record yourself, get feedback, and improve your speaking clarity and confidence.</CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/pronunciation">
               <Button variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground">
                 Practice Speaking
               </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="text-center shadow-md hover:shadow-lg transition-shadow duration-300">
-          <CardHeader>
-            <div className="mx-auto bg-secondary p-3 rounded-full w-fit mb-4">
-              <Trophy className="h-8 w-8 text-secondary-foreground" />
-            </div>
-            <CardTitle>Quizzes & Challenges</CardTitle>
-            <CardDescription>Test your knowledge and track your progress with fun, gamified quizzes and challenges.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/quizzes">
-              <Button variant="outline">Take a Quiz</Button>
             </Link>
           </CardContent>
         </Card>
