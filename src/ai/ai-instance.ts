@@ -1,6 +1,7 @@
 // src/ai/ai-instance.ts
-import { genkit } from '@genkit-ai/core';
+import { genkit } from '@genkit-ai/core'; // Correct import for v1.x
 import { googleAI } from '@genkit-ai/googleai';
+import { z } from 'zod'; // Keep zod import if needed for schemas defined here
 
 // Check if the API key is available in environment variables
 const googleApiKey = process.env.GOOGLE_API_KEY;
@@ -11,8 +12,7 @@ if (!googleApiKey) {
     );
 }
 
-// Initialize Genkit with the Google AI plugin
-// Only include the plugin if the API key exists
+// Initialize Genkit with the Google AI plugin using the correct v1.x syntax
 export const ai = genkit({
     plugins: [
         googleAI({
@@ -25,5 +25,4 @@ export const ai = genkit({
 });
 
 // Example of defining a schema (can be used in flows/prompts)
-// import { z } from 'zod';
 // export const ExampleSchema = z.object({ message: z.string() });
