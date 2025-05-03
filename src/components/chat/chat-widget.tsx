@@ -62,7 +62,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         setTimeout(() => {
             const botMessage: SimpleChatMessage = {
                 role: 'model',
-                content: "Thanks for your message! Live agent support is not available right now. Please explore the help documentation or try again later.",
+                content: "Thanks for your message! Live agent support and AI features are not available right now. Please explore the help documentation or try again later.",
             };
             setMessages((prevMessages) => [...prevMessages, botMessage]);
             setIsLoading(false);
@@ -157,4 +157,3 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         </div>
     );
 }
-

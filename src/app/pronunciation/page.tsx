@@ -9,16 +9,24 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Mic, Square, Loader2, AlertCircle, Volume2, Play } from 'lucide-react'; // Added Play icon
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-// Assuming the file path is correct after previous fixes
-// Explicitly add .ts extension to see if it resolves the module not found error
-import { getPronunciationFeedback } from '@/ai/flows/pronunciation-feedback-flow.ts';
-import type { PronunciationOutput } from '@/ai/flows/pronunciation-feedback-flow.ts';
+// AI Imports commented out as AI features are disabled
+// import { getPronunciationFeedback } from '@/ai/flows/pronunciation-feedback-flow.ts';
+// import type { PronunciationOutput } from '@/ai/flows/pronunciation-feedback-flow.ts';
+
+// Type definition moved here to avoid dependency when AI is disabled
+interface PronunciationOutput {
+  overallScore: number;
+  overallAssessment: string;
+  wordScores?: Array<{ word: string; score: number }>;
+  suggestions?: string[];
+}
+
 
 type RecordingState = 'idle' | 'recording' | 'stopped' | 'processing' | 'error';
 
 export default function PronunciationPage() {
   const [text, setText] = useState<string>('The quick brown fox jumps over the lazy dog.');
-  const [feedback, setFeedback] = useState<PronunciationOutput | null>(null);
+  const [feedback, setFeedback] = useState<PronunciationOutput | null>(null); // Keep state for potential future re-enablement
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +66,7 @@ export default function PronunciationPage() {
 
     setRecordingState('recording');
     setError(null);
-    setFeedback(null);
+    setFeedback(null); // Clear previous feedback
     setAudioDataUri(null);
     audioChunksRef.current = [];
     setProgress(0);
@@ -90,8 +98,8 @@ export default function PronunciationPage() {
       };
 
       recorder.onstop = async () => { // Make onstop async
-        // Change state to processing while waiting for AI
-        setRecordingState('processing');
+        // Since AI is disabled, skip processing state and go directly to stopped
+        // setRecordingState('processing'); // Skip processing state
 
         const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType });
         const reader = new FileReader();
@@ -107,7 +115,8 @@ export default function PronunciationPage() {
           }
           setAudioDataUri(base64Audio); // Store for playback
 
-          // --- Call AI for feedback ---
+          // --- AI Call Disabled ---
+          /*
           try {
             console.log("Sending to AI:", { text: text.trim(), audioDataUri: base64Audio.substring(0, 50) + "..." }); // Log snippet
             const aiFeedback = await getPronunciationFeedback({
@@ -124,11 +133,9 @@ export default function PronunciationPage() {
              let errorMessage = 'Failed to get AI feedback.';
              if (aiError instanceof Error) {
                  errorMessage = aiError.message;
-                 // Check if it's the specific Genkit not initialized error
                  if (errorMessage.startsWith('Genkit not initialized') || errorMessage.startsWith('Genkit initialization failed')) {
                      errorMessage = 'AI features are currently unavailable. Please ensure the API key is configured correctly.';
                  } else if (errorMessage.includes('service is busy or rate limited') || errorMessage.includes('The provided audio or text could not be processed') ) {
-                     // Use the specific error message from the flow
                      errorMessage = aiError.message;
                  }
              }
@@ -138,15 +145,16 @@ export default function PronunciationPage() {
                description: errorMessage,
                variant: "destructive",
              });
-             // Keep state as 'stopped' if AI fails, allowing playback
-             setRecordingState('stopped');
+             setRecordingState('stopped'); // Keep state as 'stopped' if AI fails, allowing playback
              cleanupRecording();
              return; // Exit here if AI fails
           }
-          // --- End AI Call ---
+          */
+           // --- End AI Call ---
 
-          // Set state to stopped *after* AI processing is done (or if it failed but we allowed playback)
+          // Set state to stopped as AI is disabled
           setRecordingState('stopped');
+          toast({ title: "Recording Saved", description: "You can now play back your recording." });
           setProgress(0); // Reset progress bar
           cleanupRecording(); // Cleanup stream and interval
         };
@@ -222,7 +230,7 @@ export default function PronunciationPage() {
     <div className="container mx-auto px-4 max-w-3xl space-y-8">
        <section className="text-center">
          <h1 className="text-3xl md:text-4xl font-bold mb-2">Pronunciation Practice</h1>
-         <p className="text-lg text-muted-foreground">Record yourself reading the text below, listen back, and get AI feedback.</p>
+         <p className="text-lg text-muted-foreground">Record yourself reading the text below and listen back.</p> {/* Removed AI part */}
        </section>
 
       <Card className="shadow-lg">
@@ -237,7 +245,7 @@ export default function PronunciationPage() {
             placeholder="Enter the text to practice..."
             rows={3}
             className="mb-4"
-            disabled={recordingState === 'recording' || recordingState === 'processing'}
+            disabled={recordingState === 'recording'} // Only disable while actively recording
           />
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {/* Button Logic */}
@@ -246,23 +254,19 @@ export default function PronunciationPage() {
                 <Square className="mr-2 h-5 w-5" /> Stop Recording
               </Button>
             )}
-             {recordingState === 'processing' && (
-                 <Button variant="secondary" size="lg" disabled>
-                   <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
-                 </Button>
-            )}
+             {/* Removed Processing Button as AI is disabled */}
              {(recordingState === 'idle' || recordingState === 'stopped' || recordingState === 'error') && (
                <Button onClick={startRecording} size="lg" disabled={!text.trim()}>
                  <Mic className="mr-2 h-5 w-5" /> Start Recording
                </Button>
              )}
-             {audioDataUri && (recordingState === 'stopped' || recordingState === 'error') && ( // Allow playback even on AI error
-                 <Button onClick={playAudio} variant="outline" size="lg" disabled={recordingState === 'processing'}>
+             {audioDataUri && (recordingState === 'stopped' || recordingState === 'error') && ( // Allow playback when stopped or on error
+                 <Button onClick={playAudio} variant="outline" size="lg">
                     <Play className="mr-2 h-5 w-5" /> Play Recording
                  </Button>
              )}
           </div>
-          {(recordingState === 'recording' || recordingState === 'processing') && (
+          {recordingState === 'recording' && ( // Only show progress while recording
             <Progress value={progress} className="w-full mt-4 h-2" />
           )}
         </CardContent>
@@ -283,7 +287,8 @@ export default function PronunciationPage() {
         </Alert>
       )}
 
-      {/* --- AI Feedback Section --- */}
+      {/* --- AI Feedback Section Disabled --- */}
+      {/*
       {recordingState === 'stopped' && feedback && (
         <Card className="shadow-lg">
             <CardHeader>
@@ -325,6 +330,17 @@ export default function PronunciationPage() {
             </CardContent>
         </Card>
       )}
+      */}
+       {/* Add a placeholder if feedback was expected */}
+        {recordingState === 'stopped' && !error && (
+             <Alert variant="default" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>AI Feedback Disabled</AlertTitle>
+                <AlertDescription>
+                    Pronunciation analysis by the AI agent is currently disabled. You can still record and play back your audio.
+                </AlertDescription>
+             </Alert>
+        )}
     </div>
   );
 }
