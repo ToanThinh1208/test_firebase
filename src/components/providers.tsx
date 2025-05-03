@@ -1,9 +1,11 @@
+
 'use client';
 
 import type { PropsWithChildren } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
+import { AuthProvider } from '@/context/auth-context'; // Import AuthProvider
 
 export function Providers({ children }: PropsWithChildren) {
   const [queryClient] = useState(
@@ -21,7 +23,9 @@ export function Providers({ children }: PropsWithChildren) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AuthProvider> {/* Wrap children with AuthProvider */}
+        {children}
+      </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

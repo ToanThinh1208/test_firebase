@@ -1,10 +1,16 @@
+
+'use client'; // Make homepage a client component to use auth state
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Mic, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth } from '@/context/auth-context'; // Import useAuth
 
 export default function Home() {
+  const { currentUser, loading } = useAuth(); // Get auth state
+
   return (
     <div className="flex flex-col items-center space-y-16">
       {/* Hero Section */}
@@ -15,16 +21,23 @@ export default function Home() {
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
           Master grammar, perfect your pronunciation, and conquer vocabulary with our engaging lessons and interactive tools.
         </p>
-        <Link href="/lessons">
-          <Button size="lg">Start Learning Today</Button>
-        </Link>
+        {/* Conditional CTA Button */}
+        {!loading && (
+          <Link href={currentUser ? "/lessons" : "/signup"}>
+            <Button size="lg">
+              {currentUser ? 'Explore Lessons' : 'Start Learning Today'}
+            </Button>
+          </Link>
+        )}
+        {loading && <Button size="lg" disabled>Loading...</Button>} {/* Optional loading state for button */}
+
         <div className="mt-12 relative aspect-video max-w-4xl mx-auto rounded-lg overflow-hidden shadow-lg">
            <Image
               src="https://picsum.photos/1200/675"
               alt="Person learning English online"
-              fill // Use fill instead of layout="fill"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px" // Add sizes prop
-              style={{ objectFit: 'cover' }} // Use style object for objectFit
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+              style={{ objectFit: 'cover' }}
               data-ai-hint="language learning online class"
               priority
             />
@@ -57,8 +70,8 @@ export default function Home() {
              <div className="mx-auto bg-accent/10 p-3 rounded-full w-fit mb-4">
               <Mic className="h-8 w-8 text-accent" />
             </div>
-            <CardTitle>Pronunciation Practice</CardTitle> {/* Updated Title */}
-            <CardDescription>Record yourself and listen back to improve your speaking clarity and confidence.</CardDescription> {/* Updated Description */}
+            <CardTitle>Pronunciation Practice</CardTitle>
+            <CardDescription>Record yourself and listen back to improve your speaking clarity and confidence.</CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/pronunciation">
@@ -85,12 +98,16 @@ export default function Home() {
         </Card>
       </section>
 
-        {/* Call to Action */}
-      <section className="text-center py-16">
-        <h2 className="text-3xl font-semibold mb-4">Ready to Take the Leap?</h2>
-        <p className="text-muted-foreground mb-8 max-w-xl mx-auto">Join thousands of learners improving their English skills every day.</p>
-        <Button size="lg" variant="default">Sign Up for Free</Button>
-      </section>
+        {/* Conditional Call to Action */}
+        {!loading && !currentUser && ( // Show only if not loading and not logged in
+            <section className="text-center py-16">
+                <h2 className="text-3xl font-semibold mb-4">Ready to Take the Leap?</h2>
+                <p className="text-muted-foreground mb-8 max-w-xl mx-auto">Join thousands of learners improving their English skills every day.</p>
+                <Link href="/signup">
+                    <Button size="lg" variant="default">Sign Up for Free</Button>
+                </Link>
+            </section>
+        )}
     </div>
   );
 }
