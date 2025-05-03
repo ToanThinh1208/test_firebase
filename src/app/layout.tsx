@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
-import { GeistSans as Geist } from 'next/font/google'; // Updated import
+import { Inter } from 'next/font/google'; // Use Inter instead of GeistSans
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { Toaster } from "@/components/ui/toaster"; // Import Toaster
 
-const geist = Geist({ // Updated variable name
-  variable: '--font-geist-sans',
+const inter = Inter({ // Use inter variable name
+  variable: '--font-inter', // Update CSS variable name
   subsets: ['latin'],
 });
 
@@ -22,7 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={geist.variable}>
+    // Apply the Inter font variable to the html tag
+    <html lang="en" className={inter.variable}>
+      {/* Keep font-sans for base styling, Inter will be applied via the variable */}
       <body className="font-sans antialiased flex flex-col min-h-screen">
         <Providers>
           <Header />
