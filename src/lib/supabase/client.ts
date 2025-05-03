@@ -1,7 +1,8 @@
 // src/lib/supabase/client.ts
 'use client'; // Mark as client component module
 
-import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
+// Import from the core supabase-js library
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/database.types'; // Adjust path if your types file is elsewhere
 
 // Ensure environment variables are defined
@@ -15,8 +16,7 @@ if (!supabaseAnonKey) {
   throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
 }
 
-// Create a Supabase client for client-side usage
-// Note: For server-side operations (Server Components, Route Handlers, Server Actions),
-// you might need a different client setup (e.g., using createServerClient).
-// This browser client is suitable for usage within 'use client' components and contexts.
-export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+// Create a Supabase client using the core library
+// This client can be used in 'use client' components.
+// For server-side, a different setup (like createServerClient from @supabase/ssr) is needed.
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
