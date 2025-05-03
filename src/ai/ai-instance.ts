@@ -1,5 +1,5 @@
 // src/ai/ai-instance.ts
-import genkit from '@genkit-ai/core'; // Use default import for genkit
+import { genkit } from '@genkit-ai/core'; // Use named import for genkit v1.x
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'zod'; // Keep zod import if needed for schemas defined elsewhere
 
@@ -10,6 +10,8 @@ if (!googleApiKey) {
     console.warn(
         'GOOGLE_API_KEY environment variable is not set. Genkit AI features will be disabled or may fail.'
     );
+    // Optionally, you could throw an error here if the key is absolutely required
+    // throw new Error('Missing GOOGLE_API_KEY environment variable.');
 }
 
 // Initialize Genkit with the Google AI plugin using the correct v1.x syntax
