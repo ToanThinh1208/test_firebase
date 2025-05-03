@@ -1,9 +1,9 @@
 // src/services/profile-service.ts
 'use server'; // Mark as server action, although called from client
 
-import { supabase } from '@/lib/supabase/client'; // Using client-side supabase instance for now
+import { supabase } from '@/lib/supabase/client'; // Using client-side supabase instance
 import type { Database } from '@/lib/supabase/database.types';
-import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
@@ -12,16 +12,16 @@ type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
  * Fetches the user profile from the 'profiles' table.
  *
  * @param userId - The ID of the user whose profile is to be fetched.
- * @param supabaseClient - An optional Supabase client instance. Defaults to the shared client instance.
  * @returns A promise that resolves to the user's profile or null if not found or an error occurred.
  */
-export async function getProfile(userId: string, supabaseClient: SupabaseClient<Database> = supabase): Promise<Profile | null> {
+export async function getProfile(userId: string): Promise<Profile | null> {
     if (!userId) {
         console.error('User ID is required to fetch profile.');
         return null;
     }
     try {
-        const { data, error, status } = await supabaseClient
+        // Directly use the imported supabase client instance
+        const { data, error, status } = await supabase
             .from('profiles')
             .select(`*`)
             .eq('id', userId)
@@ -47,10 +47,9 @@ export async function getProfile(userId: string, supabaseClient: SupabaseClient<
  *
  * @param userId - The ID of the user whose profile is to be updated/created.
  * @param updates - An object containing the profile fields to update.
- * @param supabaseClient - An optional Supabase client instance. Defaults to the shared client instance.
  * @returns A promise that resolves to an object indicating success or failure, with an optional error.
  */
-export async function updateProfile(userId: string, updates: ProfileUpdate, supabaseClient: SupabaseClient<Database> = supabase): Promise<{ success: boolean; error?: PostgrestError | Error | null }> {
+export async function updateProfile(userId: string, updates: ProfileUpdate): Promise<{ success: boolean; error?: PostgrestError | Error | null }> {
      if (!userId) {
         return { success: false, error: new Error('User ID is required to update profile.') };
     }
@@ -64,9 +63,10 @@ export async function updateProfile(userId: string, updates: ProfileUpdate, supa
     };
 
     try {
+        // Directly use the imported supabase client instance
         // Use upsert: updates if profile exists, inserts if it doesn't
         // Set `defaultToNull: false` to prevent overwriting existing fields with null if they are not provided in `updates`
-        const { error } = await supabaseClient
+        const { error } = await supabase
             .from('profiles')
             .upsert(profileDataWithTimestamp, { onConflict: 'id', defaultToNull: false }) // Ensure `id` is the conflict column, prevent null overwrites
             .select(); // Select to check the result, returns the upserted row(s)
