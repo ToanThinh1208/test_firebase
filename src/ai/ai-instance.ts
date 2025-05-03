@@ -14,19 +14,52 @@ if (!googleApiKey) {
     // throw new Error('Missing GOOGLE_API_KEY environment variable.');
 }
 
+// Define plugins array conditionally based on API key presence
+const plugins = [];
+if (googleApiKey) {
+    plugins.push(googleAI({ apiKey: googleApiKey }));
+} else {
+    console.warn('Google AI plugin not configured because GOOGLE_API_KEY is missing.');
+    // Depending on requirements, you might want to throw an error or proceed without the plugin
+    // For now, we proceed without the plugin if the key is missing.
+}
+
+
 // Initialize Genkit with the Google AI plugin using the correct v1.x syntax
 // Ensure genkit is called as a function with the configuration object
-export const ai = genkit({
-    plugins: [
-        // Pass the result of configuring the googleAI plugin
-        googleAI({
-             // Only provide apiKey if it exists, otherwise, the plugin might throw an error or use defaults
-            apiKey: googleApiKey || undefined,
-        }),
-    ],
-    logLevel: 'debug', // Set log level (e.g., 'debug', 'info')
-    enableTracingAndMetrics: true, // Enable tracing and metrics
-});
+let aiInstance;
+try {
+     // Only initialize genkit if there are plugins to use (e.g., API key was provided)
+     // Or adjust this logic if genkit should run even without plugins
+    if (plugins.length > 0) {
+        aiInstance = genkit({
+            plugins: plugins,
+            logLevel: 'debug', // Set log level (e.g., 'debug', 'info')
+            enableTracingAndMetrics: true, // Enable tracing and metrics
+        });
+    } else {
+        // Handle the case where genkit cannot be initialized (e.g., due to missing plugins/config)
+        // Option 1: Throw an error
+        // throw new Error("Cannot initialize Genkit without required plugins/configuration.");
+        // Option 2: Create a dummy/noop 'ai' object to prevent runtime errors elsewhere
+         console.error("Genkit initialization skipped due to missing configuration (e.g., API key). AI features will not work.");
+         aiInstance = { // Dummy object matching expected structure if possible
+             defineFlow: () => { throw new Error("Genkit not initialized"); },
+             definePrompt: () => { throw new Error("Genkit not initialized"); },
+             generate: async () => { throw new Error("Genkit not initialized"); },
+             // Add other methods used in your flows if necessary
+         };
+    }
+
+} catch (e) {
+    console.error("Failed to initialize genkit:", e);
+    // Provide a fallback or re-throw to make the error clearer
+    throw new Error(`Genkit initialization failed: ${e instanceof Error ? e.message : String(e)}. Check previous logs and Genkit setup.`);
+}
+
+// Export the potentially initialized instance
+export const ai = aiInstance;
+
 
 // Example of defining a schema (can be used in flows/prompts)
 // export const ExampleSchema = z.object({ message: z.string() });
