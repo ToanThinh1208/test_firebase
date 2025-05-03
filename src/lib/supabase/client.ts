@@ -9,10 +9,25 @@ import type { Database } from '@/lib/supabase/database.types'; // Adjust path if
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl) {
-  throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_URL");
+// More explicit check for URL validity
+let isValidUrl = false;
+if (supabaseUrl) {
+  try {
+    new URL(supabaseUrl); // Attempt to construct URL to check validity
+    isValidUrl = true;
+  } catch (_) {
+    // If new URL() throws, the URL is invalid
+    isValidUrl = false;
+  }
+}
+
+if (!supabaseUrl || !isValidUrl) { // Check if URL is missing OR invalid
+  // Throw a more specific error if the URL is the problem
+  console.error(`Supabase URL Check Failed. Value received: "${supabaseUrl}"`);
+  throw new Error(`Missing or invalid environment variable: NEXT_PUBLIC_SUPABASE_URL.`);
 }
 if (!supabaseAnonKey) {
+   console.error("Supabase Anon Key Check Failed.");
   throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
 }
 
