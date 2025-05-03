@@ -1,4 +1,3 @@
-
 // src/app/pronunciation/page.tsx
 'use client';
 
@@ -11,8 +10,9 @@ import { Mic, Square, Loader2, AlertCircle, Volume2, Play } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 // Assuming the file path is correct after previous fixes
-import { getPronunciationFeedback } from '@/ai/flows/pronunciation-feedback-flow';
-import type { PronunciationOutput } from '@/ai/flows/pronunciation-feedback-flow';
+// Explicitly add .ts extension to see if it resolves the module not found error
+import { getPronunciationFeedback } from '@/ai/flows/pronunciation-feedback-flow.ts';
+import type { PronunciationOutput } from '@/ai/flows/pronunciation-feedback-flow.ts';
 
 type RecordingState = 'idle' | 'recording' | 'stopped' | 'processing' | 'error';
 
@@ -121,10 +121,21 @@ export default function PronunciationPage() {
             });
           } catch (aiError) {
              console.error("Error getting AI feedback:", aiError);
-             setError(aiError instanceof Error ? aiError.message : 'Failed to get AI feedback.');
+             let errorMessage = 'Failed to get AI feedback.';
+             if (aiError instanceof Error) {
+                 errorMessage = aiError.message;
+                 // Check if it's the specific Genkit not initialized error
+                 if (errorMessage.startsWith('Genkit not initialized') || errorMessage.startsWith('Genkit initialization failed')) {
+                     errorMessage = 'AI features are currently unavailable. Please ensure the API key is configured correctly.';
+                 } else if (errorMessage.includes('service is busy or rate limited') || errorMessage.includes('The provided audio or text could not be processed') ) {
+                     // Use the specific error message from the flow
+                     errorMessage = aiError.message;
+                 }
+             }
+             setError(errorMessage);
              toast({
                title: "AI Feedback Error",
-               description: aiError instanceof Error ? aiError.message : 'Could not get feedback from AI.',
+               description: errorMessage,
                variant: "destructive",
              });
              // Keep state as 'stopped' if AI fails, allowing playback
@@ -317,4 +328,3 @@ export default function PronunciationPage() {
     </div>
   );
 }
-
