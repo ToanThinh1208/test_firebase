@@ -9,10 +9,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bot, User, Send, Loader2, X } from 'lucide-react';
-import type { SupportChatInput, SupportChatOutput, ChatMessage } from '@/ai/flows/support-chat-flow';
-import { handleSupportChat } from '@/ai/flows/support-chat-flow';
+// Removed AI flow imports as AI is disabled for chat
+// import type { SupportChatInput, SupportChatOutput, ChatMessage } from '@/ai/flows/support-chat-flow';
+// import { handleSupportChat } from '@/ai/flows/support-chat-flow';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+
+// Simple message type without AI schema dependency
+interface SimpleChatMessage {
+    role: 'user' | 'model';
+    content: string;
+}
+
 
 interface ChatWidgetProps {
     isOpen: boolean;
@@ -20,11 +28,11 @@ interface ChatWidgetProps {
 }
 
 export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
-    const [messages, setMessages] = useState<ChatMessage[]>([
-        { role: 'model', content: 'Hello! How can I assist you with LinguaLeap today?' },
+    const [messages, setMessages] = useState<SimpleChatMessage[]>([
+        { role: 'model', content: 'Hello! How can I assist you with LinguaLeap today? (Note: AI chat is currently disabled)' },
     ]);
     const [inputValue, setInputValue] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // Keep for potential future async ops or simulating delay
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -43,43 +51,32 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         const userMessageContent = inputValue.trim();
         if (!userMessageContent || isLoading) return;
 
-        const newUserMessage: ChatMessage = { role: 'user', content: userMessageContent };
+        const newUserMessage: SimpleChatMessage = { role: 'user', content: userMessageContent };
         const updatedMessages = [...messages, newUserMessage];
         setMessages(updatedMessages);
         setInputValue('');
         setIsLoading(true);
 
-        try {
-            const input: SupportChatInput = { history: updatedMessages };
-            const result: SupportChatOutput = await handleSupportChat(input);
-
-            if (result.response) {
-                const botMessage: ChatMessage = { role: 'model', content: result.response };
-                setMessages((prevMessages) => [...prevMessages, botMessage]);
-            } else {
-                // Handle cases where the flow might return an empty response (though the flow tries to prevent this)
-                toast({
-                    title: 'Chat Error',
-                    description: 'Received an empty response from the assistant.',
-                    variant: 'destructive',
-                });
-                 // Add a fallback message to the chat history
-                 const errorBotMessage: ChatMessage = { role: 'model', content: "Sorry, I couldn't generate a response. Please try again." };
-                 setMessages((prevMessages) => [...prevMessages, errorBotMessage]);
-            }
-        } catch (error) {
-            console.error('Error calling chat flow:', error);
-            toast({
-                title: 'Chat Error',
-                description: error instanceof Error ? error.message : 'An unexpected error occurred.',
-                variant: 'destructive',
-            });
-             // Add a fallback message to the chat history
-            const errorBotMessage: ChatMessage = { role: 'model', content: "Sorry, I encountered an error. Please try asking again later." };
-            setMessages((prevMessages) => [...prevMessages, errorBotMessage]);
-        } finally {
+        // --- AI Call Removed ---
+        // Simulate a delay and provide a static response
+        setTimeout(() => {
+            const botMessage: SimpleChatMessage = {
+                role: 'model',
+                content: "Thanks for your message! Live agent support is not available right now. Please explore the help documentation or try again later.",
+            };
+            setMessages((prevMessages) => [...prevMessages, botMessage]);
             setIsLoading(false);
-        }
+        }, 500); // Simulate network delay
+
+        // try {
+        //     const input: SupportChatInput = { history: updatedMessages };
+        //     const result: SupportChatOutput = await handleSupportChat(input);
+        //     // ... (rest of the AI handling code removed)
+        // } catch (error) {
+        //     // ... (error handling removed)
+        // } finally {
+        //     setIsLoading(false);
+        // }
     };
 
     if (!isOpen) return null;
