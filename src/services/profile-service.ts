@@ -1,7 +1,9 @@
 // src/services/profile-service.ts
-'use server'; // Mark as server action, although called from client
+'use server'; // Mark as server action
 
-import { supabase } from '@/lib/supabase/client'; // Using client-side supabase instance
+// Use createServerActionClient for server-side operations within Server Actions
+import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import type { Database } from '@/lib/supabase/database.types';
 import type { PostgrestError } from '@supabase/supabase-js';
 
@@ -9,7 +11,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 
 /**
- * Fetches the user profile from the 'profiles' table.
+ * Fetches the user profile from the 'profiles' table using a server client.
  *
  * @param userId - The ID of the user whose profile is to be fetched.
  * @returns A promise that resolves to the user's profile or null if not found or an error occurred.
@@ -19,8 +21,11 @@ export async function getProfile(userId: string): Promise<Profile | null> {
         console.error('User ID is required to fetch profile.');
         return null;
     }
+
+    // Create a Supabase client for server actions
+    const supabase = createServerActionClient<Database>({ cookies });
+
     try {
-        // Directly use the imported supabase client instance
         const { data, error, status } = await supabase
             .from('profiles')
             .select(`*`)
@@ -30,8 +35,6 @@ export async function getProfile(userId: string): Promise<Profile | null> {
         // Log error only if it's not a "No rows found" error (status 406)
         if (error && status !== 406) {
              console.error('Error fetching profile:', error);
-             // Depending on requirements, you might want to throw the error
-             // throw error;
              return null;
         }
 
@@ -43,7 +46,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 }
 
 /**
- * Updates (or creates if it doesn't exist) a user profile in the 'profiles' table.
+ * Updates (or creates if it doesn't exist) a user profile in the 'profiles' table using a server client.
  *
  * @param userId - The ID of the user whose profile is to be updated/created.
  * @param updates - An object containing the profile fields to update.
@@ -54,8 +57,11 @@ export async function updateProfile(userId: string, updates: ProfileUpdate): Pro
         return { success: false, error: new Error('User ID is required to update profile.') };
     }
 
+     // Create a Supabase client for server actions
+    const supabase = createServerActionClient<Database>({ cookies });
+
+
     // Ensure 'updated_at' is set for the update operation
-    // Supabase automatically handles created_at/updated_at if configured in the table, but explicit setting is also fine
     const profileDataWithTimestamp = {
         ...updates,
         id: userId, // Ensure the id is part of the object being upserted
@@ -63,7 +69,6 @@ export async function updateProfile(userId: string, updates: ProfileUpdate): Pro
     };
 
     try {
-        // Directly use the imported supabase client instance
         // Use upsert: updates if profile exists, inserts if it doesn't
         // Set `defaultToNull: false` to prevent overwriting existing fields with null if they are not provided in `updates`
         const { error } = await supabase
