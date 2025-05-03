@@ -1,7 +1,6 @@
 // src/ai/ai-instance.ts
 import { genkit } from '@genkit-ai/core';
 import { googleAI } from '@genkit-ai/googleai';
-import { defineSchema } from 'genkit'; // Import defineSchema for clarity if needed later
 
 // Check if the API key is available in environment variables
 const googleApiKey = process.env.GOOGLE_API_KEY;
@@ -26,7 +25,5 @@ export const ai = genkit({
 });
 
 // Example of defining a schema (can be used in flows/prompts)
-// export const ExampleSchema = defineSchema({
-//   name: 'exampleSchema',
-//   schema: z.object({ message: z.string() }),
-// });
+// import { z } from 'zod';
+// export const ExampleSchema = z.object({ message: z.string() });

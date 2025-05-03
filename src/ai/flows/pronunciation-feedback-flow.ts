@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/ai-instance';
-import { z } from 'genkit';
+import { z } from 'zod'; // Corrected import
 
 // Define the input schema for the pronunciation feedback flow
 const PronunciationInputSchema = z.object({
