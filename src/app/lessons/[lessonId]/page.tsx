@@ -54,7 +54,7 @@ The "th" sound can be tricky!
 *   **Voiced /ð/:** Like in "this", "that", "mother". Your vocal cords vibrate. Put your tongue between your teeth and make a sound.
 
 Listen and repeat the examples. Try recording yourself!
-`, interactiveElement: <PronunciationInfo textToPractice="The thirty-three thieves thought that they thrilled the throne throughout Thursday." /> }, // Changed component name
+`, interactiveElement: <PronunciationInfo textToPractice="The thirty-three thieves thought that they thrilled the throne throughout Thursday." /> }, // Keep this component
     // Add more lessons as needed
   };
   await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
@@ -70,14 +70,14 @@ function Flashcards() {
   return <div className="mt-4 p-4 border rounded bg-secondary/50"><p className="font-semibold">Flashcards Placeholder</p><p className="text-sm text-muted-foreground">Interactive vocabulary flashcards will appear here.</p></div>;
 }
 
-// Renamed PronunciationPractice to PronunciationInfo and removed recording button
+// PronunciationInfo component - No AI needed here, just displays practice text and link
 function PronunciationInfo({ textToPractice }: { textToPractice: string }) {
     return (
         <div className="mt-4 p-4 border rounded bg-secondary/50 space-y-2">
-            <p className="font-semibold">Pronunciation Tip</p>
+            <p className="font-semibold">Pronunciation Practice</p>
             <p className="italic text-lg">Practice saying: "{textToPractice}"</p>
-            <p className="text-sm text-muted-foreground">Focus on the 'th' sounds. You can use the <Link href="/pronunciation" className="text-primary underline">Pronunciation Practice</Link> page to record yourself.</p>
-            {/* Removed the disabled recording button */}
+            <p className="text-sm text-muted-foreground">Use the <Link href="/pronunciation" className="text-primary underline font-medium">Pronunciation Practice</Link> tool to record yourself and listen back.</p>
+            {/* Recording button/feedback removed as AI is gone */}
         </div>
     );
 }
@@ -170,16 +170,17 @@ export default function LessonPage() {
                  return <h3 key={index} className="font-semibold text-xl mt-4 mb-2">{paragraph.substring(4)}</h3>;
              }
              if (paragraph.startsWith('*   ')) {
+                  // Check if it's a list item, handle potential list start/end logic if needed
                   return <li key={index} className="ml-4 ">{paragraph.substring(4)}</li>; // Removed list-disc, handled by prose
              }
               if (paragraph.startsWith('**')) {
-                    // Basic bold handling, limited - better handled by prose or markdown renderer
+                   // Basic bold handling, limited - better handled by prose or markdown renderer
                    const parts = paragraph.split('**');
                    return <p key={index}>{parts.map((part, i) => i % 2 === 1 ? <strong key={i}>{part}</strong> : part)}</p>
               }
               // Ensure empty paragraphs are not rendered or render a break
                if (paragraph.trim() === '') {
-                  return <br key={index} />;
+                  return null; // Don't render empty paragraphs
                }
              return <p key={index}>{paragraph}</p>;
            })}
@@ -234,5 +235,3 @@ function LessonLoadingSkeleton() {
         </div>
     );
 }
-
-// Removed PronunciationFeedbackPlaceholder as AI is removed
