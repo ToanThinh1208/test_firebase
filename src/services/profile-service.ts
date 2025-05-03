@@ -68,7 +68,7 @@ export async function updateProfile(userId: string, updates: ProfileUpdate, supa
         // Set `defaultToNull: false` to prevent overwriting existing fields with null if they are not provided in `updates`
         const { error } = await supabaseClient
             .from('profiles')
-            .upsert(profileDataWithTimestamp, { onConflict: 'id', defaultToNull: false }) // Ensure `id` is the conflict column
+            .upsert(profileDataWithTimestamp, { onConflict: 'id', defaultToNull: false }) // Ensure `id` is the conflict column, prevent null overwrites
             .select(); // Select to check the result, returns the upserted row(s)
 
         if (error) {

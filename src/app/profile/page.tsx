@@ -50,15 +50,30 @@ export default function ProfilePage() {
         setProfile(data);
         form.reset({ username: data.username || '' }); // Reset form with fetched data
       } else {
-          // If no profile exists, initialize form with empty username or default based on email
+          // If no profile exists (e.g., trigger hasn't run yet or failed), initialize form with a default
+          // and attempt to create the profile row explicitly.
           const defaultUsername = currentUser.email?.split('@')[0] || '';
           form.reset({ username: defaultUsername });
-          // Optionally, create the profile row if it doesn't exist upon loading
-          await updateProfile(currentUser.id, { username: defaultUsername });
-          setProfile({ id: currentUser.id, username: defaultUsername, updated_at: new Date().toISOString() }); // Update local state
+          console.log(`Profile not found for user ${currentUser.id}, attempting to create with username: ${defaultUsername}`);
+          const { success: createSuccess, error: createError } = await updateProfile(currentUser.id, { username: defaultUsername });
+          if (createSuccess) {
+             console.log(`Successfully created profile for user ${currentUser.id}`);
+             // Re-fetch after creation attempt to get the latest state including updated_at
+             const newData = await getProfile(currentUser.id);
+             setProfile(newData); // Update local state with the newly created profile
+          } else {
+               console.error("Failed to auto-create profile:", createError);
+                toast({
+                    title: 'Profile Incomplete',
+                    description: 'Could not automatically initialize your profile. Please try saving a username.',
+                    variant: 'destructive',
+                });
+                // Set a minimal profile state to allow rendering the form
+                setProfile({ id: currentUser.id, username: defaultUsername, updated_at: null });
+          }
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching or creating profile:', error);
       toast({
         title: 'Error',
         description: 'Failed to load profile data.',
@@ -103,13 +118,18 @@ export default function ProfilePage() {
         description: 'Your profile has been successfully updated.',
         variant: 'default',
       });
-      // Optionally re-fetch profile data to confirm update
+      // Optionally re-fetch profile data to confirm update and get new updated_at
       fetchProfileData();
     } else {
       console.error('Error updating profile:', error);
+       // Check for specific Supabase errors like unique constraint violation
+        let description = error?.message || 'An error occurred while updating your profile.';
+        if (error && 'code' in error && error.code === '23505') { // Handle unique constraint violation (e.g., username taken)
+            description = 'This username is already taken. Please choose a different one.';
+        }
       toast({
         title: 'Update Failed',
-        description: error?.message || 'An error occurred while updating your profile.',
+        description: description,
         variant: 'destructive',
       });
     }

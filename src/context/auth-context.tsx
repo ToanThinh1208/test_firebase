@@ -5,7 +5,8 @@ import type { PropsWithChildren } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client'; // Import Supabase client
 import type { User, AuthError, Session } from '@supabase/supabase-js'; // Import Supabase types
-import { updateProfile } from '@/services/profile-service'; // Import updateProfile service
+// Removed updateProfile import as profile creation is handled by DB trigger
+
 
 interface AuthContextType {
   currentUser: User | null;
@@ -71,30 +72,13 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     });
 
     let message: string | undefined;
-    let profileCreationError: Error | null = null;
 
     if (error) {
        console.error("Sign up error:", error);
     } else if (data.user) {
-        // If signup is successful and user object exists, attempt to create profile
-        try {
-            // Extract username part from email as a default
-            const defaultUsername = email.split('@')[0];
-            const { success: profileSuccess, error: profileError } = await updateProfile(data.user.id, { username: defaultUsername });
-             if (!profileSuccess) {
-                console.error("Failed to create profile during signup:", profileError);
-                profileCreationError = profileError instanceof Error ? profileError : new Error('Failed to create profile.');
-                // Proceed with signup message, but maybe indicate profile issue
-            }
-        } catch (err) {
-             console.error("Unexpected error creating profile during signup:", err);
-             profileCreationError = err instanceof Error ? err : new Error('Unexpected error creating profile.');
-        }
-
-        // Determine message based on signup and profile creation outcomes
-        if (profileCreationError) {
-             message = "Sign up successful, but failed to initialize profile. Please check your email for confirmation and update your profile later.";
-        } else if (data.user.identities?.length === 0) {
+        // Profile creation is now handled by the database trigger.
+        // Determine message based on signup outcome
+        if (data.user.identities?.length === 0) {
              message = "Sign up attempt successful, but user might already exist or require confirmation. Please check your email (including spam/junk folders) for a confirmation link.";
              console.warn("Sign up successful, but user may already exist or need confirmation.");
         } else {
@@ -109,9 +93,8 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }
 
     setLoading(false);
-    // Combine potential signup error and profile creation error for return value
-    const combinedError = error ?? (profileCreationError as AuthError); // Treat profile error as AuthError for simplicity
-    return { success: !error && !profileCreationError, message, error: combinedError };
+    // Return signup outcome
+    return { success: !error, message, error };
   };
 
   const logIn = async (email: string, password: string): Promise<{ success: boolean; error?: AuthError | null }> => {

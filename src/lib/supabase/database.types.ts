@@ -45,7 +45,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+       // Added function definition from SQL
+      handle_new_user: { // Function name
+        Args: Record<string, unknown> // Define arguments if any, empty if none
+        Returns: unknown // Define the return type, unknown if not specified clearly
+      }
     }
     Enums: {
       [_ in never]: never
