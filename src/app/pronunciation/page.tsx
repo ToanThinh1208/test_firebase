@@ -1,3 +1,4 @@
+// src/app/pronunciation/page.tsx
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -5,15 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Mic, Square, Loader2, AlertCircle, Volume2 } from 'lucide-react';
+import { Mic, Square, Loader2, AlertCircle, Volume2, Star, MessageCircle, Zap, CheckCircle, XCircle } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
+import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast";
+import { getPronunciationFeedback } from '@/ai/flows/pronunciation-feedback-flow'; // Import the AI flow
+import type { PronunciationOutput } from '@/ai/flows/pronunciation-feedback-flow'; // Import the output type
 
 type RecordingState = 'idle' | 'recording' | 'processing' | 'stopped' | 'error';
 
 export default function PronunciationPage() {
   const [text, setText] = useState<string>('The quick brown fox jumps over the lazy dog.');
-  // Removed feedback state
+  const [feedback, setFeedback] = useState<PronunciationOutput | null>(null); // State for AI feedback
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +43,7 @@ export default function PronunciationPage() {
       clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
     }
-    setProgress(0); // Reset progress
+    // Don't reset progress here immediately, let the flow manage it
   };
 
    useEffect(() => {
@@ -55,7 +59,7 @@ export default function PronunciationPage() {
 
     setRecordingState('recording');
     setError(null);
-    // Removed feedback reset
+    setFeedback(null); // Clear previous feedback
     setAudioDataUri(null);
     audioChunksRef.current = [];
     setProgress(0);
@@ -71,33 +75,67 @@ export default function PronunciationPage() {
       };
 
       recorder.onstop = async () => {
-        // No longer call cleanupRecording here, it's called by stopRecording or useEffect
-        setRecordingState('processing'); // Indicate processing start
+        setRecordingState('processing');
         setProgress(50); // Indicate processing start
 
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); // Use webm or adjust based on browser support
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' }); // Specify codec if known, helps AI
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
+
         reader.onloadend = async () => {
           const base64Audio = reader.result as string;
           if (!base64Audio) {
              setError('Failed to read audio data.');
              setRecordingState('error');
              setProgress(0);
+             cleanupRecording();
              return;
           }
           setAudioDataUri(base64Audio); // Store for playback
-          setRecordingState('stopped'); // Change state to 'stopped'
-          setProgress(100);
-           toast({
-              title: "Recording Complete",
-              description: "You can now play back your recording.",
-              variant: "default",
-            });
 
-          // --- AI Feedback Logic Removed ---
+          // --- Call AI Feedback ---
+          try {
+             toast({
+                title: "Processing Audio...",
+                description: "Getting pronunciation feedback from AI.",
+             });
+             setProgress(75); // Indicate AI processing
 
+            // Ensure text is not empty before sending
+             if (!text.trim()) {
+                 throw new Error("Text to practice cannot be empty.");
+             }
+
+             const aiFeedback = await getPronunciationFeedback({
+                textToPractice: text.trim(),
+                audioDataUri: base64Audio,
+             });
+             setFeedback(aiFeedback);
+             setRecordingState('stopped');
+             setProgress(100);
+             toast({
+                title: "Feedback Ready!",
+                description: "AI pronunciation feedback has been generated.",
+                variant: "default",
+             });
+
+          } catch (aiError: any) {
+            console.error("AI Feedback Error:", aiError);
+             const errorMessage = aiError instanceof Error ? aiError.message : "An unknown error occurred while getting AI feedback.";
+             setError(`AI Feedback Error: ${errorMessage}`);
+             setRecordingState('error'); // Set state to error if AI fails
+             setProgress(0); // Reset progress on error
+             toast({
+                title: "AI Error",
+                description: errorMessage.substring(0, 100), // Show truncated error in toast
+                variant: "destructive",
+             });
+          } finally {
+             cleanupRecording(); // Ensure cleanup after processing attempt
+          }
+          // --- End AI Feedback ---
         };
+
          reader.onerror = () => {
             setError('Failed to process audio file.');
             setRecordingState('error');
@@ -113,11 +151,12 @@ export default function PronunciationPage() {
 
       recorder.start();
 
-      // Simulate progress during recording (e.g., up to 10 seconds)
-      const maxRecordTime = 10000; // 10 seconds
+      // Simulate progress during recording (e.g., up to 15 seconds max)
+      const maxRecordTime = 15000; // 15 seconds
        progressIntervalRef.current = setInterval(() => {
          setProgress(prev => {
-             const nextProgress = prev + (100 / (maxRecordTime / 100));
+             // Calculate progress increment based on 50% total during recording
+             const nextProgress = prev + (50 / (maxRecordTime / 100));
              // Cap at 50% during recording phase, stop recorder if time limit reached
              if (nextProgress >= 50) {
                  clearInterval(progressIntervalRef.current!);
@@ -129,8 +168,7 @@ export default function PronunciationPage() {
              }
              return nextProgress;
          });
-       }, 100);
-
+       }, 100); // Update progress every 100ms
 
     } catch (err) {
       console.error('Error accessing microphone:', err);
@@ -154,9 +192,10 @@ export default function PronunciationPage() {
        if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
+        // Set progress to 50 as recording stopped manually before time limit
+        setProgress(50);
       }
-      // Call cleanup here after stopping
-      cleanupRecording();
+      // Cleanup is handled in onstop after processing attempt
     }
   };
 
@@ -173,7 +212,7 @@ export default function PronunciationPage() {
        <section className="text-center">
          <h1 className="text-3xl md:text-4xl font-bold mb-2">Pronunciation Practice</h1>
          {/* Updated description */}
-         <p className="text-lg text-muted-foreground">Record yourself reading the text below and listen back.</p>
+         <p className="text-lg text-muted-foreground">Record yourself reading the text below and get AI feedback.</p>
        </section>
 
       <Card className="shadow-lg">
@@ -205,19 +244,19 @@ export default function PronunciationPage() {
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
               </Button>
             )}
-             {audioDataUri && (recordingState === 'stopped' || recordingState === 'error') && (
-                 <Button onClick={playAudio} variant="outline" size="lg">
+             {audioDataUri && (recordingState === 'stopped' || recordingState === 'error' || recordingState === 'processing') && ( // Allow playback even during processing error
+                 <Button onClick={playAudio} variant="outline" size="lg" disabled={recordingState === 'processing'}>
                     <Volume2 className="mr-2 h-5 w-5" /> Play Recording
                  </Button>
              )}
           </div>
-           {(recordingState === 'recording' || recordingState === 'processing' || recordingState === 'stopped') && (
-            <Progress value={progress} className="w-full mt-4" />
+           {(recordingState === 'recording' || recordingState === 'processing' || (recordingState === 'stopped' && progress > 0)) && (
+            <Progress value={progress} className="w-full mt-4 h-2" />
           )}
         </CardContent>
         {/* Footer for Try Again Button */}
         {(recordingState === 'stopped' || recordingState === 'error') && (
-             <CardFooter className="justify-center">
+             <CardFooter className="justify-center pt-4 border-t">
                 <Button onClick={startRecording} variant="link" className="text-primary">
                     Record again?
                 </Button>
@@ -233,7 +272,67 @@ export default function PronunciationPage() {
         </Alert>
       )}
 
-      {/* --- Feedback Card Removed --- */}
+      {/* --- Display AI Feedback --- */}
+      {recordingState === 'stopped' && feedback && (
+        <Card className="shadow-lg border-primary">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Star className="h-6 w-6 text-yellow-500" /> AI Feedback
+                </CardTitle>
+                 <CardDescription>Here's the analysis of your pronunciation.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                 {/* Overall Score */}
+                <div className="text-center">
+                     <p className="text-sm font-medium text-muted-foreground mb-1">Overall Score</p>
+                    <p className="text-5xl font-bold text-primary">{feedback.overallScore}<span className="text-2xl text-muted-foreground">/100</span></p>
+                </div>
+
+                {/* General Feedback */}
+                <div>
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><MessageCircle className="h-5 w-5 text-primary" /> General Comments</h3>
+                    <p className="text-muted-foreground bg-secondary/50 p-3 rounded-md">{feedback.feedback}</p>
+                </div>
+
+                {/* Word-Level Feedback */}
+                 {feedback.wordLevelFeedback && feedback.wordLevelFeedback.length > 0 && (
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Word Analysis</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {feedback.wordLevelFeedback.map((wordFeedback, index) => (
+                                <Badge
+                                    key={index}
+                                    variant={wordFeedback.isCorrect ? 'default' : 'destructive'}
+                                    className="text-sm font-normal"
+                                    title={wordFeedback.comment || (wordFeedback.isCorrect ? 'Pronounced correctly' : 'Needs improvement')} // Tooltip for comment
+                                >
+                                     {wordFeedback.isCorrect ? <CheckCircle className="mr-1 h-3 w-3" /> : <XCircle className="mr-1 h-3 w-3" />}
+                                    {wordFeedback.word}
+                                </Badge>
+                            ))}
+                        </div>
+                         <p className="text-xs text-muted-foreground mt-2">Hover over words for specific comments.</p>
+                    </div>
+                 )}
+
+
+                {/* Suggestions */}
+                {feedback.suggestions && feedback.suggestions.length > 0 && (
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><Zap className="h-5 w-5 text-accent" /> Suggestions for Improvement</h3>
+                        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+                            {feedback.suggestions.map((suggestion, index) => (
+                                <li key={index}>{suggestion}</li>
+                            ))}
+                        </ul>
+                    </div>
+                 )}
+
+            </CardContent>
+            {/* Optionally add a footer if needed */}
+        </Card>
+      )}
+      {/* End AI Feedback Display */}
 
     </div>
   );
