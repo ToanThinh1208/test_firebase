@@ -1,9 +1,10 @@
+
 'use client'; // Keep as client component for potential interactivity
 
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, XCircle, Mic, ArrowRight } from 'lucide-react'; // Added ArrowRight
+import { ArrowLeft, CheckCircle, XCircle, ArrowRight, BookOpen, Headphones } from 'lucide-react'; // Added ArrowRight, BookOpen, Headphones
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react'; // Use state for dynamic content loading
@@ -84,7 +85,69 @@ Used for possible future situations. If + present simple, ... will + base verb.
 *   **ASAP:** As Soon As Possible.
 *   **FYI:** For Your Information.
 `, interactiveElement: <Flashcards /> },
-    // Add detailed content for other lessons as needed
+    // --- New Lesson Details ---
+    r1: { title: 'Reading Short Stories', content: `
+### Reading Practice: "The Little Fox"
+Once upon a time, there was a little fox named Finn. Finn lived in a cozy den under a big oak tree. Every morning, Finn loved to explore the forest. One day, he saw a shiny red apple that had fallen from a tree. He sniffed it curiously. "What a delicious smell!" he thought. He nudged the apple with his nose and rolled it back to his den to share with his family.
+
+**Tips for Reading:**
+*   Read slowly and sound out unfamiliar words.
+*   Try to understand the main idea of each sentence.
+*   Visualize the story in your mind.
+`, interactiveElement: <ReadingComprehension textId="r1_story" /> },
+    l1: { title: 'Listening to Basic Conversations', content: `
+### Listening Practice: Simple Greetings
+Listen to the audio clips below. Can you understand what the speakers are saying?
+
+**Conversation 1:**
+*   A: Hello! How are you?
+*   B: I'm fine, thank you. And you?
+*   A: I'm good, thanks!
+
+**Conversation 2:**
+*   A: What's your name?
+*   B: My name is Maria.
+*   A: Nice to meet you, Maria.
+*   B: Nice to meet you too.
+
+**Tips for Listening:**
+*   Listen for keywords.
+*   Don't worry if you don't understand every word.
+*   Try listening multiple times.
+`, interactiveElement: <ListeningExercise audioIds={['l1_convo1', 'l1_convo2']} /> },
+     w1: { title: 'Writing Simple Sentences', content: `
+### Sentence Structure Basics
+A simple English sentence usually has a subject and a verb.
+*   Subject: Who or what the sentence is about (e.g., *I*, *The cat*, *They*).
+*   Verb: The action or state of being (e.g., *run*, *is*, *eat*).
+
+**Examples:**
+*   *I* (subject) *run* (verb).
+*   *The cat* (subject) *is* (verb) *sleeping*.
+*   *They* (subject) *eat* (verb) *apples*.
+
+Try writing your own simple sentences!
+`, interactiveElement: <WritingPractice prompt="Write three simple sentences about your day." /> },
+     r2: { title: 'Understanding News Headlines', content: `
+### Decoding Headlines
+News headlines use short, impactful language. They often omit small words like "a", "the", or "is".
+*   **Example 1:** "City Council Approves New Park Budget" (Means: The city council has approved the budget for a new park.)
+*   **Example 2:** "Local Man Wins Lottery Jackpot" (Means: A man from the local area has won the lottery jackpot.)
+
+Look at the keywords to understand the main topic. Verbs are often in the present simple.
+`, interactiveElement: <HeadlineMatcher headlines={['h1', 'h2', 'h3']} /> },
+    l2: { title: 'Listening to Short Talks', content: `
+### Listening Practice: A Talk About Hobbies
+Listen to the short audio talk about different hobbies. Try to answer the following questions:
+1.  What are the three hobbies mentioned?
+2.  Why does the speaker enjoy gardening?
+3.  What equipment is needed for photography?
+
+**Tips for Longer Listening:**
+*   Focus on the main points.
+*   Listen for transition words (like "first", "next", "finally").
+*   Take notes if it helps.
+`, interactiveElement: <ListeningQuiz audioId="l2_talk" /> },
   };
   await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
 
@@ -108,7 +171,9 @@ Used for possible future situations. If + present simple, ... will + base verb.
   return null; // Lesson not found in either list or details
 }
 
-// Placeholder Interactive Components
+// --- Placeholder Interactive Components ---
+
+// Existing Placeholders
 function SimpleQuiz() {
   return <div className="mt-4 p-4 border rounded bg-secondary/50"><p className="font-semibold">Interactive Quiz Placeholder</p><p className="text-sm text-muted-foreground">A simple multiple-choice quiz about the lesson topic will appear here.</p></div>;
 }
@@ -117,21 +182,82 @@ function Flashcards() {
   return <div className="mt-4 p-4 border rounded bg-secondary/50"><p className="font-semibold">Flashcards Placeholder</p><p className="text-sm text-muted-foreground">Interactive vocabulary flashcards will appear here.</p></div>;
 }
 
-// PronunciationInfo component - No AI needed here, just displays practice text and link
 function PronunciationInfo({ textToPractice }: { textToPractice: string }) {
     return (
         <div className="mt-4 p-4 border rounded bg-secondary/50 space-y-2">
             <p className="font-semibold">Pronunciation Practice</p>
             <p className="italic text-lg">Practice saying: "{textToPractice}"</p>
             <p className="text-sm text-muted-foreground">Use the <Link href="/pronunciation" className="text-primary underline font-medium">Pronunciation Practice</Link> tool to record yourself and listen back.</p>
-            {/* Recording button/feedback removed as AI is gone */}
         </div>
     );
 }
 
-// New placeholder for c1 lesson
 function RolePlaySimulator() {
   return <div className="mt-4 p-4 border rounded bg-secondary/50"><p className="font-semibold">Role-Play Simulator Placeholder</p><p className="text-sm text-muted-foreground">An interactive role-playing exercise for ordering food will appear here.</p></div>;
+}
+
+// --- New Placeholders for Reading, Listening, Writing ---
+function ReadingComprehension({ textId }: { textId: string }) {
+    return (
+        <div className="mt-4 p-4 border rounded bg-secondary/50">
+            <p className="font-semibold flex items-center gap-2"><BookOpen className="h-5 w-5"/> Reading Comprehension</p>
+            <p className="text-sm text-muted-foreground">Questions about the text "{textId}" will appear here (e.g., multiple choice, fill-in-the-blank).</p>
+        </div>
+    );
+}
+
+function ListeningExercise({ audioIds }: { audioIds: string[] }) {
+     // Simple playback button - replace with actual audio player later
+    const playAudio = (id: string) => alert(`Playing audio: ${id}`);
+
+    return (
+        <div className="mt-4 p-4 border rounded bg-secondary/50 space-y-3">
+            <p className="font-semibold flex items-center gap-2"><Headphones className="h-5 w-5"/> Listening Exercise</p>
+            {audioIds.map((id) => (
+                 <div key={id} className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => playAudio(id)}>Play {id.replace(/_/g, ' ')}</Button>
+                    <span className="text-sm text-muted-foreground">(Audio playback placeholder)</span>
+                 </div>
+            ))}
+            <p className="text-sm text-muted-foreground">Interactive listening tasks (e.g., match audio to text, answer questions) will appear here.</p>
+        </div>
+    );
+}
+
+function WritingPractice({ prompt }: { prompt: string }) {
+    return (
+        <div className="mt-4 p-4 border rounded bg-secondary/50">
+            <p className="font-semibold">Writing Practice</p>
+            <p className="text-sm mb-2">Prompt: <em>{prompt}</em></p>
+            <p className="text-sm text-muted-foreground">A text area for writing practice and a submission button will appear here. AI feedback might be added later.</p>
+             {/* Placeholder for textarea and submit */}
+            <div className="mt-2 h-20 bg-muted rounded"></div>
+            <Button size="sm" className="mt-2" disabled>Submit (Placeholder)</Button>
+        </div>
+    );
+}
+
+function HeadlineMatcher({ headlines }: { headlines: string[] }) {
+    return (
+        <div className="mt-4 p-4 border rounded bg-secondary/50">
+            <p className="font-semibold">Headline Matching</p>
+            <p className="text-sm text-muted-foreground">An exercise to match headlines ({headlines.join(', ')}) to their full meanings will appear here.</p>
+        </div>
+    );
+}
+
+function ListeningQuiz({ audioId }: { audioId: string }) {
+     const playAudio = (id: string) => alert(`Playing audio: ${id}`);
+    return (
+        <div className="mt-4 p-4 border rounded bg-secondary/50 space-y-3">
+            <p className="font-semibold flex items-center gap-2"><Headphones className="h-5 w-5"/> Listening Quiz</p>
+             <div className="flex items-center gap-2">
+                 <Button variant="outline" size="sm" onClick={() => playAudio(audioId)}>Play Talk ({audioId})</Button>
+                 <span className="text-sm text-muted-foreground">(Audio playback placeholder)</span>
+             </div>
+            <p className="text-sm text-muted-foreground">Multiple-choice questions based on the audio talk "{audioId}" will appear here.</p>
+        </div>
+    );
 }
 
 
@@ -243,15 +369,15 @@ export default function LessonPage() {
              if (paragraph.startsWith('### ')) {
                  return <h3 key={index} className="font-semibold text-xl mt-4 mb-2">{paragraph.substring(4)}</h3>;
              }
-             if (paragraph.startsWith('*   ')) {
-                  // Check if it's a list item, handle potential list start/end logic if needed
-                  return <li key={index} className="ml-4 ">{paragraph.substring(4)}</li>; // Removed list-disc, handled by prose
-             }
               if (paragraph.startsWith('**')) {
                    // Basic bold handling, limited - better handled by prose or markdown renderer
                    const parts = paragraph.split('**');
                    return <p key={index}>{parts.map((part, i) => i % 2 === 1 ? <strong key={i}>{part}</strong> : part)}</p>
               }
+             if (paragraph.startsWith('*   ')) {
+                 // Create a list item, assuming paragraphs starting with '*   ' are list items
+                 return <ul key={`ul-${index}`} className="list-disc pl-5"><li key={index} className="">{paragraph.substring(4)}</li></ul>;
+             }
               // Ensure empty paragraphs are not rendered or render a break
                if (paragraph.trim() === '') {
                   return null; // Don't render empty paragraphs

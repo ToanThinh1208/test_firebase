@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlayCircle, BookText, Ear } from "lucide-react";
+import { PlayCircle, BookText, Ear, Mic, Edit3, Headphones } from "lucide-react"; // Added Mic, Edit3, Headphones
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -8,7 +9,7 @@ interface Lesson {
   id: string;
   title: string;
   description: string;
-  type: 'Grammar' | 'Vocabulary' | 'Pronunciation' | 'Conversation';
+  type: 'Grammar' | 'Vocabulary' | 'Pronunciation' | 'Conversation' | 'Reading' | 'Listening' | 'Writing'; // Added Reading, Listening, Writing
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   imageUrl: string;
   imageHint: string;
@@ -22,14 +23,22 @@ export const lessons: Lesson[] = [
   { id: 'c1', title: 'Ordering Food at a Restaurant', description: 'Practice common phrases for dining out.', type: 'Conversation', level: 'Beginner', imageUrl: 'https://picsum.photos/400/200?random=4', imageHint: 'restaurant menu food' },
   { id: 'g2', title: 'Introduction to Conditionals', description: 'Learn the basics of zero and first conditional sentences.', type: 'Grammar', level: 'Intermediate', imageUrl: 'https://picsum.photos/400/200?random=5', imageHint: 'question mark logic flow' },
   { id: 'v2', title: 'Business English Essentials', description: 'Key vocabulary for meetings and emails.', type: 'Vocabulary', level: 'Advanced', imageUrl: 'https://picsum.photos/400/200?random=6', imageHint: 'business meeting handshake' },
+  { id: 'r1', title: 'Reading Short Stories', description: 'Improve comprehension by reading simple stories.', type: 'Reading', level: 'Beginner', imageUrl: 'https://picsum.photos/400/200?random=11', imageHint: 'open book story reading' },
+  { id: 'l1', title: 'Listening to Basic Conversations', description: 'Practice understanding everyday spoken English.', type: 'Listening', level: 'Beginner', imageUrl: 'https://picsum.photos/400/200?random=12', imageHint: 'headphones listening audio' },
+  { id: 'w1', title: 'Writing Simple Sentences', description: 'Learn to construct basic English sentences.', type: 'Writing', level: 'Beginner', imageUrl: 'https://picsum.photos/400/200?random=13', imageHint: 'pencil writing paper' },
+  { id: 'r2', title: 'Understanding News Headlines', description: 'Practice reading and interpreting news headlines.', type: 'Reading', level: 'Intermediate', imageUrl: 'https://picsum.photos/400/200?random=14', imageHint: 'newspaper headlines reading' },
+  { id: 'l2', title: 'Listening to Short Talks', description: 'Improve comprehension of longer spoken passages.', type: 'Listening', level: 'Intermediate', imageUrl: 'https://picsum.photos/400/200?random=15', imageHint: 'person speaking lecture audio' },
 ];
 
 function getIconForType(type: Lesson['type']) {
   switch (type) {
     case 'Grammar': return <BookText className="h-5 w-5 text-primary" />;
-    case 'Vocabulary': return <BookText className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />; // Adjusted icon/color with dark mode
-    case 'Pronunciation': return <Ear className="h-5 w-5 text-accent" />;
-    case 'Conversation': return <PlayCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />; // Adjusted icon/color with dark mode
+    case 'Vocabulary': return <BookText className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
+    case 'Pronunciation': return <Mic className="h-5 w-5 text-accent" />; // Changed Icon
+    case 'Conversation': return <PlayCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />;
+    case 'Reading': return <BookOpen className="h-5 w-5 text-orange-600 dark:text-orange-400" />; // New Icon
+    case 'Listening': return <Headphones className="h-5 w-5 text-blue-600 dark:text-blue-400" />; // New Icon
+    case 'Writing': return <Edit3 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />; // New Icon
     default: return <BookText className="h-5 w-5 text-muted-foreground" />;
   }
 }
@@ -90,3 +99,4 @@ export default function LessonsPage() {
     </div>
   );
 }
+
