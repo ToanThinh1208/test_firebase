@@ -5,6 +5,7 @@ import type { PropsWithChildren } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client'; // Import Supabase client
 import type { User, AuthError, Session } from '@supabase/supabase-js'; // Import Supabase types
+import { updateProfile } from '@/services/profile-service'; // Import updateProfile service
 
 interface AuthContextType {
   currentUser: User | null;
@@ -60,36 +61,57 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
   const signUp = async (email: string, password: string): Promise<{ success: boolean; message?: string; error?: AuthError | null }> => {
     setLoading(true);
-    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/login` : '/login'; // Fallback for server-side rendering if needed, although this context is client-side
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/login` : '/login';
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        // Ensure this matches the URL where users should land after clicking the confirmation link.
         emailRedirectTo: redirectUrl,
       },
     });
 
-    setLoading(false);
     let message: string | undefined;
+    let profileCreationError: Error | null = null;
+
     if (error) {
        console.error("Sign up error:", error);
-    } else if (data.user && data.user.identities?.length === 0) {
-        // This condition might indicate the user exists but needs confirmation (heuristic, check Supabase docs for specifics)
-         message = "Sign up attempt successful, but user might already exist or require confirmation. Please check your email (including spam/junk folders) for a confirmation link. If you don't receive it within a few minutes, please try logging in or resetting your password.";
-         console.warn("Sign up successful, but user may already exist or need confirmation.");
-    }
-     else if (data.user) {
-      // Successful signup, user object exists (confirmation might still be required depending on Supabase settings)
-      message = "Sign up successful! Please check your email (including spam/junk folders) for a confirmation link. It might take a few minutes to arrive.";
-      console.log("Sign up successful. Confirmation email likely sent.");
+    } else if (data.user) {
+        // If signup is successful and user object exists, attempt to create profile
+        try {
+            // Extract username part from email as a default
+            const defaultUsername = email.split('@')[0];
+            const { success: profileSuccess, error: profileError } = await updateProfile(data.user.id, { username: defaultUsername });
+             if (!profileSuccess) {
+                console.error("Failed to create profile during signup:", profileError);
+                profileCreationError = profileError instanceof Error ? profileError : new Error('Failed to create profile.');
+                // Proceed with signup message, but maybe indicate profile issue
+            }
+        } catch (err) {
+             console.error("Unexpected error creating profile during signup:", err);
+             profileCreationError = err instanceof Error ? err : new Error('Unexpected error creating profile.');
+        }
+
+        // Determine message based on signup and profile creation outcomes
+        if (profileCreationError) {
+             message = "Sign up successful, but failed to initialize profile. Please check your email for confirmation and update your profile later.";
+        } else if (data.user.identities?.length === 0) {
+             message = "Sign up attempt successful, but user might already exist or require confirmation. Please check your email (including spam/junk folders) for a confirmation link.";
+             console.warn("Sign up successful, but user may already exist or need confirmation.");
+        } else {
+             message = "Sign up successful! Please check your email (including spam/junk folders) for a confirmation link. It might take a few minutes to arrive.";
+             console.log("Sign up successful. Confirmation email likely sent.");
+        }
+
     } else {
-        // Fallback case if no user data and no error (should be rare)
+        // Fallback case if no user data and no error
          message = "Sign up process initiated. Please check your email (including spam/junk folders) for a confirmation link if required.";
          console.log("Sign up attempt finished without user data or error.");
     }
-    // Success is true if there's no immediate error, but confirmation might still be pending.
-    return { success: !error, message, error };
+
+    setLoading(false);
+    // Combine potential signup error and profile creation error for return value
+    const combinedError = error ?? (profileCreationError as AuthError); // Treat profile error as AuthError for simplicity
+    return { success: !error && !profileCreationError, message, error: combinedError };
   };
 
   const logIn = async (email: string, password: string): Promise<{ success: boolean; error?: AuthError | null }> => {

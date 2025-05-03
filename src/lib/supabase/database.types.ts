@@ -13,39 +13,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      // Add your tables here if you have any
-      // Example:
-      // profiles: {
-      //   Row: {
-      //     id: string
-      //     updated_at: string | null
-      //     username: string | null
-      //     avatar_url: string | null
-      //     website: string | null
-      //   }
-      //   Insert: {
-      //     id: string
-      //     updated_at?: string | null
-      //     username?: string | null
-      //     avatar_url?: string | null
-      //     website?: string | null
-      //   }
-      //   Update: {
-      //     id?: string
-      //     updated_at?: string | null
-      //     username?: string | null
-      //     avatar_url?: string | null
-      //     website?: string | null
-      //   }
-      //   Relationships: [
-      //     {
-      //       foreignKeyName: "profiles_id_fkey"
-      //       columns: ["id"]
-      //       referencedRelation: "users"
-      //       referencedColumns: ["id"]
-      //     }
-      //   ]
-      // }
+      profiles: { // Added profiles table definition
+        Row: {
+          id: string // Foreign key to auth.users.id
+          updated_at: string | null
+          username: string | null
+          // Add other profile fields here later (e.g., avatar_url, full_name)
+        }
+        Insert: {
+          id: string // Must match auth.users.id
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey" // Assumed foreign key name based on convention
+            columns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+            isOneToOne: true // Indicate it's a one-to-one relationship with users table
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

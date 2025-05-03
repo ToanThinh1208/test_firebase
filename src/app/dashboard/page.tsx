@@ -1,7 +1,7 @@
 // src/app/dashboard/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { Lightbulb, Target, BookOpen, Mic, Trophy, Star, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getProfile } from '@/services/profile-service'; // Import profile service
+import type { Database } from '@/lib/supabase/database.types';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 
 // Placeholder data structures
@@ -61,8 +65,31 @@ export default function DashboardPage() {
   const router = useRouter();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [progress, setProgress] = useState<ProgressStats | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null); // Add profile state
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchProfileAndDashboard = useCallback(async () => {
+     if (!currentUser) return;
+     setLoadingData(true);
+     setError(null);
+     try {
+         // Fetch profile and dashboard data in parallel
+         const [profileData, dashboardData] = await Promise.all([
+             getProfile(currentUser.id),
+             getDashboardData(currentUser.id)
+         ]);
+         setProfile(profileData);
+         setRecommendations(dashboardData.recommendations);
+         setProgress(dashboardData.progress);
+     } catch (err) {
+         console.error("Error fetching dashboard or profile data:", err);
+         setError("Failed to load dashboard data.");
+     } finally {
+         setLoadingData(false);
+     }
+  }, [currentUser]);
+
 
   useEffect(() => {
     // Redirect if not logged in and auth check is complete
@@ -72,20 +99,10 @@ export default function DashboardPage() {
   }, [currentUser, authLoading, router]);
 
   useEffect(() => {
-    if (currentUser) {
-      setLoadingData(true);
-      getDashboardData(currentUser.id)
-        .then(data => {
-          setRecommendations(data.recommendations);
-          setProgress(data.progress);
-        })
-        .catch(err => {
-          console.error("Error fetching dashboard data:", err);
-          setError("Failed to load dashboard data.");
-        })
-        .finally(() => setLoadingData(false));
-    }
-  }, [currentUser]);
+     if (currentUser) {
+        fetchProfileAndDashboard();
+     }
+  }, [currentUser, fetchProfileAndDashboard]);
 
   // Show loading state while checking auth or fetching data
   if (authLoading || (!currentUser && !authLoading) || loadingData) {
@@ -108,10 +125,14 @@ export default function DashboardPage() {
 
   if (!progress) return null; // Should be covered by loading/error states
 
+   // Determine the display name: use username if available, otherwise fallback to email prefix
+  const displayName = profile?.username || currentUser.email?.split('@')[0] || 'Learner';
+
+
   return (
     <div className="space-y-8">
        <section>
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {currentUser.email?.split('@')[0] || 'Learner'}!</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {displayName}!</h1>
         <p className="text-lg text-muted-foreground">Here's your learning dashboard.</p>
       </section>
 

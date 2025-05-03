@@ -47,7 +47,8 @@ export function Header() {
     // Function to get initials from email
    const getInitials = (email?: string | null) => {
        if (!email) return 'U'; // Default 'U' for User
-       return email.charAt(0).toUpperCase();
+       const namePart = email.split('@')[0];
+       return namePart.charAt(0).toUpperCase(); // Use first letter of email before @
    };
 
 
@@ -110,10 +111,17 @@ export function Header() {
                  {/* Auth Buttons in Mobile Menu */}
                  {!loading && (
                      currentUser ? (
-                        <Button variant="ghost" onClick={handleLogout} className="w-full justify-start px-6">
-                          <LogOut className="mr-2 h-5 w-5" />
-                           <span>Log Out</span>
-                        </Button>
+                        <>
+                            <Link href="/profile" className="block">
+                                <Button variant="ghost" className="w-full justify-start px-6">
+                                    <User className="mr-2 h-5 w-5" /> Profile
+                                </Button>
+                            </Link>
+                            <Button variant="ghost" onClick={handleLogout} className="w-full justify-start px-6">
+                              <LogOut className="mr-2 h-5 w-5" />
+                               <span>Log Out</span>
+                            </Button>
+                        </>
                      ) : (
                          <>
                             <Link href="/login" className="block">
@@ -167,10 +175,12 @@ export function Header() {
                             <span>Dashboard</span>
                         </DropdownMenuItem>
                     </Link>
-                     <DropdownMenuItem disabled> {/* Add links to profile/settings later */}
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                    </DropdownMenuItem>
+                     <Link href="/profile"> {/* Enabled Profile Link */}
+                        <DropdownMenuItem>
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                        </DropdownMenuItem>
+                    </Link>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
