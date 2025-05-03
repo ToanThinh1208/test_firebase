@@ -32,7 +32,7 @@ try {
      // Only initialize genkit if there are plugins to use (e.g., API key was provided)
      // Or adjust this logic if genkit should run even without plugins
     if (plugins.length > 0) {
-        aiInstance = genkit({
+        aiInstance = genkit({ // This should now work with the named import
             plugins: plugins,
             logLevel: 'debug', // Set log level (e.g., 'debug', 'info')
             enableTracingAndMetrics: true, // Enable tracing and metrics
