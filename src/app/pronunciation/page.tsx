@@ -1,3 +1,4 @@
+
 // src/app/pronunciation/page.tsx
 'use client';
 
@@ -9,21 +10,19 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Mic, Square, Loader2, AlertCircle, Volume2, Play } from 'lucide-react'; // Added Play icon
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-// Remove AI-related imports
-// import { getPronunciationFeedback } from '@/ai/flows/pronunciation-feedback-flow';
-// import type { PronunciationOutput } from '@/ai/flows/pronunciation-feedback-flow';
+// Assuming the file path is correct after previous fixes
+import { getPronunciationFeedback } from '@/ai/flows/pronunciation-feedback-flow';
+import type { PronunciationOutput } from '@/ai/flows/pronunciation-feedback-flow';
 
-// Adjusted RecordingState: removed 'processing'
-type RecordingState = 'idle' | 'recording' | 'stopped' | 'error';
+type RecordingState = 'idle' | 'recording' | 'stopped' | 'processing' | 'error';
 
 export default function PronunciationPage() {
   const [text, setText] = useState<string>('The quick brown fox jumps over the lazy dog.');
-  // Remove feedback state
-  // const [feedback, setFeedback] = useState<PronunciationOutput | null>(null);
+  const [feedback, setFeedback] = useState<PronunciationOutput | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0); // Keep progress for recording timer
+  const [progress, setProgress] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -41,30 +40,25 @@ export default function PronunciationPage() {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-     if (progressIntervalRef.current) {
+    if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
     }
-    // Reset progress when cleaning up after recording or error
-    setProgress(0);
+    setProgress(0); // Reset progress
   };
 
    useEffect(() => {
-    // Ensure cleanup happens when the component unmounts
     return () => {
       cleanupRecording();
     };
   }, []);
 
-
   const startRecording = async () => {
-    // Allow starting again from 'stopped' or 'error' state
-    if (recordingState === 'recording') return;
+    if (recordingState === 'recording' || recordingState === 'processing') return;
 
     setRecordingState('recording');
     setError(null);
-    // Remove feedback reset
-    // setFeedback(null);
+    setFeedback(null);
     setAudioDataUri(null);
     audioChunksRef.current = [];
     setProgress(0);
@@ -72,47 +66,86 @@ export default function PronunciationPage() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const recorder = new MediaRecorder(stream);
+      // Attempt common MIME types, starting with opus in webm for better compression
+      const mimeTypes = [
+          'audio/webm;codecs=opus',
+          'audio/ogg;codecs=opus',
+          'audio/webm', // Fallback webm
+          'audio/ogg',  // Fallback ogg
+          'audio/wav', // Less ideal, larger files
+          'audio/mp4', // Sometimes supported
+      ];
+      const supportedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
+
+      if (!supportedMimeType) {
+          throw new Error("No suitable audio format supported by this browser.");
+      }
+       console.log("Using MIME type:", supportedMimeType);
+
+      const recorder = new MediaRecorder(stream, { mimeType: supportedMimeType });
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (event) => {
         audioChunksRef.current.push(event.data);
       };
 
-      recorder.onstop = () => {
-        // Change state directly to stopped, remove processing
-        setRecordingState('stopped');
+      recorder.onstop = async () => { // Make onstop async
+        // Change state to processing while waiting for AI
+        setRecordingState('processing');
 
-        const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' }); // Use mimeType from recorder if available
+        const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
 
-        reader.onloadend = () => {
+        reader.onloadend = async () => { // Make onloadend async
           const base64Audio = reader.result as string;
           if (!base64Audio) {
              setError('Failed to read audio data.');
-             setRecordingState('error'); // Set error state
+             setRecordingState('error');
              cleanupRecording();
              return;
           }
           setAudioDataUri(base64Audio); // Store for playback
-          // --- AI Call Removed ---
-          // Reset progress to 0 after recording is complete and processed
-           setProgress(0);
-           toast({
-            title: "Recording Saved",
-            description: "You can now play back your recording.",
-           });
-           cleanupRecording(); // Cleanup stream and interval
+
+          // --- Call AI for feedback ---
+          try {
+            console.log("Sending to AI:", { text: text.trim(), audioDataUri: base64Audio.substring(0, 50) + "..." }); // Log snippet
+            const aiFeedback = await getPronunciationFeedback({
+                textToPronounce: text.trim(), // Ensure text is trimmed
+                audioDataUri: base64Audio,
+            });
+            setFeedback(aiFeedback);
+            toast({
+                title: "Feedback Received",
+                description: "AI has analyzed your pronunciation.",
+            });
+          } catch (aiError) {
+             console.error("Error getting AI feedback:", aiError);
+             setError(aiError instanceof Error ? aiError.message : 'Failed to get AI feedback.');
+             toast({
+               title: "AI Feedback Error",
+               description: aiError instanceof Error ? aiError.message : 'Could not get feedback from AI.',
+               variant: "destructive",
+             });
+             // Keep state as 'stopped' if AI fails, allowing playback
+             setRecordingState('stopped');
+             cleanupRecording();
+             return; // Exit here if AI fails
+          }
+          // --- End AI Call ---
+
+          // Set state to stopped *after* AI processing is done (or if it failed but we allowed playback)
+          setRecordingState('stopped');
+          setProgress(0); // Reset progress bar
+          cleanupRecording(); // Cleanup stream and interval
         };
 
          reader.onerror = () => {
             setError('Failed to process audio file.');
             setRecordingState('error');
-            cleanupRecording(); // Ensure cleanup on error
+            cleanupRecording();
          }
 
-         // Clear the interval if it exists from the recording phase
          if (progressIntervalRef.current) {
              clearInterval(progressIntervalRef.current);
              progressIntervalRef.current = null;
@@ -121,7 +154,6 @@ export default function PronunciationPage() {
 
       recorder.start();
 
-      // Progress during recording (e.g., up to 15 seconds max)
       const maxRecordTime = 15000; // 15 seconds
       let elapsedTime = 0;
        progressIntervalRef.current = setInterval(() => {
@@ -130,18 +162,19 @@ export default function PronunciationPage() {
          setProgress(currentProgress);
 
          if (elapsedTime >= maxRecordTime) {
-             stopRecording(); // Auto-stop after max time
+             stopRecording();
          }
-       }, 100); // Update progress every 100ms
+       }, 100);
 
     } catch (err) {
-      console.error('Error accessing microphone:', err);
-      setError('Could not access microphone. Please ensure permission is granted.');
+      console.error('Error accessing microphone or recording:', err);
+       const message = err instanceof Error ? err.message : 'Could not access microphone or start recording. Please ensure permission is granted and your browser supports the required audio formats.';
+      setError(message);
       setRecordingState('error');
-      cleanupRecording(); // Ensure cleanup on error
+      cleanupRecording();
        toast({
-        title: "Microphone Error",
-        description: "Could not access the microphone. Please check permissions.",
+        title: "Recording Error",
+        description: message,
         variant: "destructive",
       });
     }
@@ -150,13 +183,11 @@ export default function PronunciationPage() {
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
-       // State change and cleanup is handled in recorder.onstop
-       // Clear interval here as well
        if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
-      // Don't set progress here, let onstop handle it after processing blob
+      // State change is handled in recorder.onstop
     }
   };
 
@@ -176,11 +207,11 @@ export default function PronunciationPage() {
 
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    // Use container and mx-auto for centering
+    <div className="container mx-auto px-4 max-w-3xl space-y-8">
        <section className="text-center">
          <h1 className="text-3xl md:text-4xl font-bold mb-2">Pronunciation Practice</h1>
-         {/* Updated description */}
-         <p className="text-lg text-muted-foreground">Record yourself reading the text below and listen to your playback.</p>
+         <p className="text-lg text-muted-foreground">Record yourself reading the text below, listen back, and get AI feedback.</p>
        </section>
 
       <Card className="shadow-lg">
@@ -195,34 +226,35 @@ export default function PronunciationPage() {
             placeholder="Enter the text to practice..."
             rows={3}
             className="mb-4"
-            disabled={recordingState === 'recording'} // Only disable during recording
+            disabled={recordingState === 'recording' || recordingState === 'processing'}
           />
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            {/* Button Logic Adjusted */}
-            {recordingState === 'recording' ? (
+            {/* Button Logic */}
+            {recordingState === 'recording' && (
               <Button onClick={stopRecording} variant="destructive" size="lg">
                 <Square className="mr-2 h-5 w-5" /> Stop Recording
               </Button>
-            ) : (
-                // Show Start Recording button if idle, stopped, or error
+            )}
+             {recordingState === 'processing' && (
+                 <Button variant="secondary" size="lg" disabled>
+                   <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
+                 </Button>
+            )}
+             {(recordingState === 'idle' || recordingState === 'stopped' || recordingState === 'error') && (
                <Button onClick={startRecording} size="lg" disabled={!text.trim()}>
                  <Mic className="mr-2 h-5 w-5" /> Start Recording
                </Button>
-            )}
-            {/* Play button visible only when stopped and audio is available */}
-             {audioDataUri && recordingState === 'stopped' && (
-                 <Button onClick={playAudio} variant="outline" size="lg">
-                    <Play className="mr-2 h-5 w-5" /> Play Recording {/* Changed Icon */}
+             )}
+             {audioDataUri && (recordingState === 'stopped' || recordingState === 'error') && ( // Allow playback even on AI error
+                 <Button onClick={playAudio} variant="outline" size="lg" disabled={recordingState === 'processing'}>
+                    <Play className="mr-2 h-5 w-5" /> Play Recording
                  </Button>
              )}
-             {/* Removed Processing button */}
           </div>
-          {/* Progress bar only during recording */}
-           {recordingState === 'recording' && (
+          {(recordingState === 'recording' || recordingState === 'processing') && (
             <Progress value={progress} className="w-full mt-4 h-2" />
           )}
         </CardContent>
-        {/* Footer for Try Again Button */}
         {(recordingState === 'stopped' || recordingState === 'error') && (
              <CardFooter className="justify-center pt-4 border-t">
                 <Button onClick={startRecording} variant="link" className="text-primary">
@@ -240,8 +272,49 @@ export default function PronunciationPage() {
         </Alert>
       )}
 
-      {/* --- AI Feedback Section Removed --- */}
+      {/* --- AI Feedback Section --- */}
+      {recordingState === 'stopped' && feedback && (
+        <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle>AI Pronunciation Feedback</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <Alert variant={feedback.overallScore >= 70 ? "default" : "destructive"} className={feedback.overallScore >= 70 ? "border-green-500 bg-green-50 dark:bg-green-900/30" : ""}>
+                    <AlertTitle className="font-semibold">Overall Assessment: {feedback.overallAssessment}</AlertTitle>
+                    <AlertDescription>Score: {feedback.overallScore}/100</AlertDescription>
+                 </Alert>
 
+                 {feedback.wordScores && feedback.wordScores.length > 0 && (
+                    <div>
+                        <h4 className="font-semibold mb-2">Word Breakdown:</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {feedback.wordScores.map((word, index) => (
+                                <Badge
+                                    key={index}
+                                    variant={word.score >= 80 ? 'default' : word.score >= 50 ? 'secondary' : 'destructive'}
+                                    className="text-base px-3 py-1"
+                                >
+                                    {word.word} ({word.score})
+                                </Badge>
+                            ))}
+                        </div>
+                    </div>
+                 )}
+
+                {feedback.suggestions && feedback.suggestions.length > 0 && (
+                    <div>
+                        <h4 className="font-semibold mb-2">Suggestions for Improvement:</h4>
+                        <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                            {feedback.suggestions.map((suggestion, index) => (
+                                <li key={index}>{suggestion}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
+

@@ -1,4 +1,5 @@
 
+
 'use client'; // Make homepage a client component to use auth state
 
 import { Button } from '@/components/ui/button';
@@ -12,9 +13,10 @@ export default function Home() {
   const { currentUser, loading } = useAuth(); // Get auth state
 
   return (
-    <div className="flex flex-col items-center space-y-16">
+    // Use container and mx-auto for centering the main content sections
+    <div className="container mx-auto px-4 flex flex-col items-center space-y-16">
       {/* Hero Section */}
-      <section className="text-center py-16 md:py-24 lg:py-32">
+      <section className="text-center py-16 md:py-24 lg:py-32 w-full">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
           Unlock Your English Potential with <span className="text-primary">LinguaLeap</span>
         </h1>
@@ -49,6 +51,7 @@ export default function Home() {
       </section>
 
       {/* Features Section - Updated for 4 skills */}
+      {/* Ensure this section respects the container's centering */}
       <section className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Reading */}
         <Card className="text-center shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -125,7 +128,7 @@ export default function Home() {
 
         {/* Conditional Call to Action */}
         {!loading && !currentUser && ( // Show only if not loading and not logged in
-            <section className="text-center py-16">
+            <section className="text-center py-16 w-full">
                 <h2 className="text-3xl font-semibold mb-4">Ready to Take the Leap?</h2>
                 <p className="text-muted-foreground mb-8 max-w-xl mx-auto">Join thousands of learners improving their English skills every day.</p>
                 <Link href="/signup">
@@ -136,3 +139,4 @@ export default function Home() {
     </div>
   );
 }
+

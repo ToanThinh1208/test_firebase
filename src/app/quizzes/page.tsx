@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Zap, Clock, BarChart3, Star } from "lucide-react"; // Icons for quiz metadata
@@ -34,7 +35,8 @@ function getDifficultyClasses(difficulty: Quiz['difficulty']) {
 
 export default function QuizzesPage() {
   return (
-    <div className="space-y-8">
+    // Use container and mx-auto to center the content
+    <div className="container mx-auto px-4 space-y-8">
       <section className="text-center">
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Quizzes & Challenges</h1>
         <p className="text-lg text-muted-foreground">Test your English knowledge and earn points!</p>
@@ -42,9 +44,11 @@ export default function QuizzesPage() {
 
       {/* TODO: Add filtering/sorting options here */}
 
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Ensure the grid itself is centered if the container isn't enough */}
+      {/* Added `justify-center` to the grid container to explicitly center items when they don't fill the row */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
         {quizzes.map((quiz) => (
-          <Card key={quiz.id} className="overflow-hidden flex flex-col justify-between shadow-md hover:shadow-lg transition-shadow duration-300">
+          <Card key={quiz.id} className="overflow-hidden flex flex-col justify-between shadow-md hover:shadow-lg transition-shadow duration-300 w-full max-w-sm mx-auto"> {/* Added max-w-sm and mx-auto for card sizing and centering within grid cell */}
             <div>
                <div className="relative aspect-video w-full">
                   <Image
@@ -85,8 +89,8 @@ export default function QuizzesPage() {
         ))}
       </section>
 
-        {/* Leaderboard Placeholder */}
-        <section className="mt-12">
+        {/* Leaderboard Placeholder - centered within the container */}
+        <section className="mt-12 max-w-2xl mx-auto"> {/* Added max-w and mx-auto for centering */}
             <Card>
                 <CardHeader>
                     <CardTitle>Leaderboard</CardTitle>
@@ -101,3 +105,4 @@ export default function QuizzesPage() {
     </div>
   );
 }
+

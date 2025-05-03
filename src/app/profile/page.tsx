@@ -1,3 +1,4 @@
+
 // src/app/profile/page.tsx
 'use client';
 
@@ -146,7 +147,8 @@ export default function ProfilePage() {
 
 
   return (
-    <div className="max-w-2xl mx-auto">
+    // Use container and mx-auto to center the content
+    <div className="container mx-auto px-4 max-w-2xl">
       <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
       <Card className="shadow-md">
         <CardHeader>
@@ -212,3 +214,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

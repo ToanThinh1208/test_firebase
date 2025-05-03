@@ -1,3 +1,4 @@
+
 // src/app/dashboard/page.tsx
 'use client';
 
@@ -130,14 +131,15 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="space-y-8">
+     // Use container and mx-auto to center the content if not already handled by layout
+    <div className="container mx-auto px-4 space-y-8">
        <section>
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {displayName}!</h1>
         <p className="text-lg text-muted-foreground">Here's your learning dashboard.</p>
       </section>
 
         {/* Overall Progress */}
-         <Card className="shadow-md">
+         <Card className="shadow-md max-w-4xl mx-auto"> {/* Add max-w and mx-auto */}
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Target className="h-6 w-6 text-primary" />
@@ -160,7 +162,7 @@ export default function DashboardPage() {
         </Card>
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"> {/* Add max-w and mx-auto */}
         {/* Recommendations Section */}
         <Card className="lg:col-span-2 shadow-md">
           <CardHeader>
@@ -235,7 +237,7 @@ export default function DashboardPage() {
       </div>
 
        {/* Placeholder for recent activity or badges earned */}
-        <Card className="shadow-md">
+        <Card className="shadow-md max-w-4xl mx-auto"> {/* Add max-w and mx-auto */}
             <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
@@ -247,3 +249,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

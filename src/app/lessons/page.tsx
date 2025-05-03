@@ -1,7 +1,8 @@
 
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlayCircle, BookText, Ear, Mic, Edit3, Headphones } from "lucide-react"; // Added Mic, Edit3, Headphones
+import { PlayCircle, BookText, Mic, Edit3, Headphones, BookOpen } from "lucide-react"; // Added Mic, Edit3, Headphones, BookOpen
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -45,7 +46,8 @@ function getIconForType(type: Lesson['type']) {
 
 export default function LessonsPage() {
   return (
-    <div className="space-y-8">
+    // Use container and mx-auto to center the content
+    <div className="container mx-auto px-4 space-y-8">
       <section className="text-center">
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Interactive English Lessons</h1>
         <p className="text-lg text-muted-foreground">Choose a lesson below to start improving your English skills.</p>
@@ -53,6 +55,7 @@ export default function LessonsPage() {
 
       {/* TODO: Add filtering/sorting options here */}
 
+      {/* Ensure the grid itself is centered if the container isn't enough, but typically container handles it */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {lessons.map((lesson) => (
           <Card key={lesson.id} className="overflow-hidden flex flex-col justify-between shadow-md hover:shadow-lg transition-shadow duration-300">
