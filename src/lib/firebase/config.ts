@@ -15,6 +15,22 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID, // Optional
 };
 
+// Check if essential config keys are missing or are still the placeholder values
+if (
+    !firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY" ||
+    !firebaseConfig.authDomain || firebaseConfig.authDomain === "YOUR_AUTH_DOMAIN" ||
+    !firebaseConfig.projectId || firebaseConfig.projectId === "YOUR_PROJECT_ID"
+   ) {
+    console.error(
+        "Firebase configuration is missing or incomplete. " +
+        "Please ensure your .env file has the correct NEXT_PUBLIC_FIREBASE_* variables set " +
+        "with your actual Firebase project credentials. Do not use the placeholder values."
+        );
+    // Depending on the desired behavior, you might want to throw an error here
+    // or disable Firebase-dependent features. Logging is the least disruptive option.
+}
+
+
 // Initialize Firebase
 // Check if Firebase app already exists to avoid reinitialization errors
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();

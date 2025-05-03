@@ -77,8 +77,18 @@ export function SignUpForm() {
                 case 'auth/weak-password':
                     errorMessage = 'Password is too weak. Please choose a stronger password.';
                     break;
+                case 'auth/operation-not-allowed': // Example: Email/password sign-in might be disabled in Firebase console
+                    errorMessage = 'Email/Password sign-up is currently disabled.';
+                    break;
+                case 'auth/missing-config': // Catch config issues explicitly if possible
+                case 'auth/invalid-api-key':
+                     errorMessage = 'Firebase configuration error. Please contact support.';
+                     console.error("Firebase Config Error:", authError.message); // Log more details for admins
+                     break;
                 default:
-                    errorMessage = `Sign up failed: ${authError.message}`;
+                    // Log the specific code for debugging unknown errors
+                    console.error("Unhandled Firebase sign-up error:", authError.code, authError.message);
+                    errorMessage = `Sign up failed: An unexpected error occurred. (${authError.code})`; // Provide code for reference
             }
         }
        setError(errorMessage);
