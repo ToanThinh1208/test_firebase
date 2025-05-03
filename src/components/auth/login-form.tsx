@@ -56,26 +56,18 @@ export function LoginForm() {
         description: 'Welcome back!',
       });
       router.push('/'); // Redirect to home page after successful login
+      router.refresh(); // Force refresh to update server components dependent on auth state
     } else {
-      // Handle Firebase Auth errors
+      // Handle Supabase Auth errors
       let errorMessage = 'An unexpected error occurred. Please try again.';
       if (authError) {
-          switch (authError.code) {
-              case 'auth/invalid-email':
-                  errorMessage = 'Invalid email format.';
-                  break;
-              case 'auth/user-not-found':
-              case 'auth/wrong-password':
-                  errorMessage = 'Invalid email or password.';
-                  break;
-              case 'auth/invalid-credential':
-                 errorMessage = 'Invalid email or password.'; // More generic for newer SDK versions
-                 break;
-              case 'auth/too-many-requests':
-                  errorMessage = 'Too many login attempts. Please try again later.';
-                  break;
-              default:
-                  errorMessage = `Login failed: ${authError.message}`;
+         // Supabase specific error messages can be more user-friendly
+          if (authError.message.includes('Invalid login credentials')) {
+             errorMessage = 'Invalid email or password.';
+          } else if (authError.message.includes('Email not confirmed')) {
+             errorMessage = 'Please confirm your email address first.';
+          } else {
+             errorMessage = `Login failed: ${authError.message}`;
           }
       }
       setError(errorMessage);

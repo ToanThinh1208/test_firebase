@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react'; // Import Loader2
+import { AlertCircle, Loader2, CheckCircle } from 'lucide-react'; // Import Loader2 and CheckCircle
 
 // Schema with password confirmation
 const formSchema = z.object({
@@ -41,6 +41,7 @@ export function SignUpForm() {
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false); // State for confirmation message
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,42 +55,36 @@ export function SignUpForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null); // Clear previous errors
     setIsLoading(true); // Set loading state
+    setShowConfirmationMessage(false); // Reset confirmation message
+
     const { success, error: authError } = await signUp(values.email, values.password);
     setIsLoading(false); // Reset loading state
 
     if (success) {
+       // Check if Supabase requires email confirmation (this depends on your Supabase settings)
+       // For now, we assume confirmation might be needed and show a generic success message.
+       setShowConfirmationMessage(true); // Show confirmation message instead of redirecting immediately
+       form.reset(); // Reset form fields
       toast({
-        title: 'Account Created Successfully',
-        description: 'Welcome to LinguaLeap!',
+        title: 'Account Creation Pending',
+        description: 'Please check your email to confirm your account.',
       });
-      router.push('/'); // Redirect to home page after successful sign up
+       // Don't redirect immediately, let the user see the confirmation message.
+       // router.push('/');
     } else {
-       // Handle Firebase Auth errors
+       // Handle Supabase Auth errors
         let errorMessage = 'An unexpected error occurred. Please try again.';
         if (authError) {
-            switch (authError.code) {
-                case 'auth/email-already-in-use':
-                    errorMessage = 'This email address is already registered.';
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = 'Invalid email format.';
-                    break;
-                case 'auth/weak-password':
-                    errorMessage = 'Password is too weak. Please choose a stronger password.';
-                    break;
-                case 'auth/operation-not-allowed': // Example: Email/password sign-in might be disabled in Firebase console
-                    errorMessage = 'Email/Password sign-up is currently disabled.';
-                    break;
-                case 'auth/missing-config': // Catch config issues explicitly if possible
-                case 'auth/invalid-api-key':
-                     errorMessage = 'Firebase configuration error. Please contact support.';
-                     console.error("Firebase Config Error:", authError.message); // Log more details for admins
-                     break;
-                default:
-                    // Log the specific code for debugging unknown errors
-                    console.error("Unhandled Firebase sign-up error:", authError.code, authError.message);
-                    errorMessage = `Sign up failed: An unexpected error occurred. (${authError.code})`; // Provide code for reference
+           if (authError.message.includes('User already registered')) { // Supabase error message for existing user
+                errorMessage = 'This email address is already registered.';
+            } else if (authError.message.includes('Password should be at least 6 characters.')) { // Example Supabase weak password error
+                 errorMessage = 'Password is too weak. Please choose a stronger password (at least 6 characters).';
             }
+            // Add more specific Supabase error checks if needed
+             else {
+                 errorMessage = `Sign up failed: ${authError.message}`;
+                 console.error("Unhandled Supabase sign-up error:", authError.message);
+             }
         }
        setError(errorMessage);
         toast({
@@ -99,6 +94,29 @@ export function SignUpForm() {
         });
     }
   }
+
+    if (showConfirmationMessage) {
+        return (
+            <Card className="w-full max-w-md mx-auto shadow-lg">
+                <CardHeader>
+                    <CardTitle className="text-2xl text-center">Check Your Email</CardTitle>
+                     <CardDescription className="text-center flex flex-col items-center gap-4">
+                         <CheckCircle className="h-12 w-12 text-green-500" />
+                        We've sent a confirmation link to your email address. Please click the link to activate your account.
+                    </CardDescription>
+                </CardHeader>
+                 <CardFooter className="flex justify-center text-sm">
+                    <p className="text-muted-foreground">
+                      Already confirmed?{' '}
+                      <Link href="/login" className="text-primary hover:underline">
+                        Log In
+                      </Link>
+                    </p>
+                  </CardFooter>
+            </Card>
+        );
+    }
+
 
   return (
      <Card className="w-full max-w-md mx-auto shadow-lg">
