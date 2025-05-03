@@ -63,21 +63,22 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      // Add options like email confirmation redirect if needed
-      // options: {
-      //   emailRedirectTo: `${location.origin}/auth/callback`,
-      // },
+      options: {
+        // Ensure this matches the URL where users should land after clicking the confirmation link.
+        // It should ideally be a page that handles the confirmation token (Supabase handles this server-side, but the user needs to land somewhere).
+        // '/login' is a common choice, assuming your Supabase redirect settings are configured.
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
     });
 
-    // Note: Supabase might require email confirmation. User state might not update immediately.
-    // The auth listener will handle the user state update upon successful confirmation/login.
     setLoading(false);
     if (error) {
        console.error("Sign up error:", error);
     } else {
-        // You might want to inform the user to check their email for confirmation
-        console.log("Sign up successful, check email for confirmation if enabled.");
+        // Inform the user to check their email for confirmation, especially if confirmation is enabled in Supabase settings.
+        console.log("Sign up attempt successful. If email confirmation is enabled, please check your email.");
     }
+    // Success is true if there's no immediate error, but confirmation might still be pending.
     return { success: !error, error };
   };
 
